@@ -1,0 +1,563 @@
+---
+title: "Secondary analysis"
+author: "Leslie (ZW)"
+date: "2024-05-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(survey)
+library(tidyverse)
+library(dummy)
+library(glmnet)
+library(svyVGAM)
+library(knitr)
+library(haven)
+```
+
+# Secondary Analysis
+
+## Association Sleep vs Metabolic Comorbidities
+
+### Data preparation
+```{r}
+# Read data
+pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+names(ev5)[2]<-'SOL_ID'
+
+# Add genetic PCs
+pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+# Set reference level for diabetes and hypertension
+pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
+pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+
+# Create survey objects
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL, data=pheno)
+survey_obj <- subset(survey_obj,  !is.na(lgCrp))
+
+```
+
+### Association without adjusting for MRS-CRP
+```{r}
+############## Sleep ~ diseases
+
+# Diabetes
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+diab <- tab %>% mutate(condition='Diabetes')
+
+# Hypertension
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+hyp <- tab %>% mutate(condition='Hypertension')
+
+# Cognitive score baseline
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+cg <- tab %>% mutate(condition='cog_baseline')
+
+# Cognitive score change
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+cc <- tab %>% mutate(condition='cog_change')
+res <- rbind(diab,hyp,cg,cc)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_wo.csv',row.names = F)
+```
+
+### Association after adjusting for MRS_CRP
+```{r}
+############## Sleep ~ diseases
+
+# Diabetes
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+diab <- tab %>% mutate(condition='Diabetes')
+
+# Hypertension
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+hyp <- tab %>% mutate(condition='Hypertension')
+
+# Cognitive score baseline
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+cg <- tab %>% mutate(condition='cog_baseline')
+
+# Cognitive score change
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
+                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+
+for (i in 1:3){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  } 
+cc <- tab %>% mutate(condition='cog_change')
+res <- rbind(diab,hyp,cg,cc)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_w.csv',row.names = F)
+```
+
+## Association between MRS-CRP with phenotypes adjusting for PRS-CRP
+
+### Data preparation
+```{r}
+# Read data
+scsx <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240314_SOL_PRS_CSx.csv')
+pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+names(ev5)[2]<-'SOL_ID'
+
+# Add genetic PCs
+pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+# Classify long and short sleep duration
+pheno <- merge(pheno, scsx[,c(1,12,13)], by='SOL_ID')
+pheno$cDur <- ifelse(pheno$SLPDUR>9, 'Long', ifelse(pheno$SLPDUR<6, 'Short', 'Norm'))
+long <- subset(pheno, cDur%in%c('Long','Norm'))
+long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
+# Set reference level for diabetes and hypertension
+pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
+pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+
+# Create survey objects
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pheno)
+survey_obj <- subset(survey_obj,  !is.na(lgCrp))
+survey_long <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long <- subset(survey_long,  !is.na(lgCrp))
+```
+
+### Adjusting for PRS-CRP
+```{r}
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp'),
+                  coef=rep(1,7), p.val=rep(1,7), lower=rep(1,7), upper=rep(1,7))
+
+for (i in 1:7 ){
+  if (i<5){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + CSx_wsum  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 5:6){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + CSx_wsum + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i ==7 ) {
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_HEnet + CSx_wsum + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+wprs <- tab %>% mutate(group='wPRS')
+#write.csv(wprs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_wprs.csv',row.names = F)
+```
+
+## Lasso feature selection
+
+### Read Data
+```{r}
+load('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/enet.RData')
+chr_all <- read.csv("~/OneDrive - Beth Israel Lahey Health/2023_parquet_db_methylation/Data/infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip=7)
+names(chr_all)[2]<-'CpG'
+phe <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+names(ev5)[2]<-'SOL_ID'
+phe <- merge(phe, ev5[,c(2,5:9)],by='SOL_ID')
+#26-S92, 24-S54, 25-S91, 15-diab, 9-hyper
+# 96-S54, 60-61 s91-92 94-hyper 38-diab
+```
+
+### AHI (SLPA54)
+```{r}
+# Prepare x and y matrices
+#p2 <- phe[,c(13,2,4:6,59:64,66,72:76,24)] 
+p2 <- phe[,c(102,3,7,12,15,8,103:107,109,139:143,96)]
+p2$BKGRD1_C7 <- as.character(p2$BKGRD1_C7)
+p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
+p2 <- cbind(p2[,c(3,5:17)], dummy(p2))
+p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$Row_names <- row.names(p2)
+d$Row_names <- row.names(d)
+data <- merge(p2, d, by='Row_names') 
+data <- data[complete.cases(data$SLPA54),]
+data <- data %>% remove_rownames %>% column_to_rownames('Row_names')
+data$intercept <- rep(1, nrow(data))
+data <- data[complete.cases(data$EV1),]
+data <- data[complete.cases(data$BMI),]
+
+# Prepare X matrix
+x<-as.matrix(data[,c(ncol(data), 1:13, 15:20, 23:26, 28:(ncol(data)-1))])
+
+# apply penalty only on CpGs and not on other variables
+n_chem <- length(colnames(x)[25:ncol(x)])
+p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) # intercept and cell components not included in selection
+
+y <- data[,'SLPA54']
+
+# Cross validation
+set.seed(1997)
+kcvlasso <- cv.glmnet(x, y, nfolds = 5,
+                      type.measure = "deviance",
+                      penalty.factor = p.fac)
+
+ind_min <- which.min(kcvlasso$cvm)
+selected_lambda <- kcvlasso$lambda[ind_min]
+
+# Best lasso model
+set.seed(1997)
+lasso <- glmnet(x, y,
+                lambda = selected_lambda,
+                type.measure = "deviance", 
+                penalty.factor = p.fac)
+lasso_beta <- lasso$beta
+mrs_coefs <- lasso_beta[grep("cg", rownames(lasso_beta)), "s0"]
+mrs_coefs <- as.data.frame(mrs_coefs[which(mrs_coefs != 0)])
+names(mrs_coefs) <- 'coef_AHI'
+mrs_coefs$CpG <- row.names(mrs_coefs)
+AHI <- merge(mrs_coefs,chr_all[,c(2,12,16)],by='CpG')
+nrow(AHI)
+```
+
+### Minimum SpO2 (SLPA91)
+```{r}
+# Prepare x and y matrices
+p2 <- phe[,c(102,3,7,12,15,8,103:107,109,139:143,60)]
+p2$BKGRD1_C7 <- as.character(p2$BKGRD1_C7)
+p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
+p2 <- cbind(p2[,c(3,5:17)], dummy(p2))
+p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$Row_names <- row.names(p2)
+d$Row_names <- row.names(d)
+data <- merge(p2, d, by='Row_names') 
+data <- data[complete.cases(data$SLPA91),]
+data <- data %>% remove_rownames %>% column_to_rownames('Row_names')
+data$intercept <- rep(1, nrow(data))
+data <- data[complete.cases(data$EV1),]
+data <- data[complete.cases(data$BMI),]
+
+# Prepare X matrix
+x<-as.matrix(data[,c(ncol(data), 1:13, 15:20, 23:26, 28:(ncol(data)-1))])
+
+# apply penalty only on CpGs and not on other variables
+n_chem <- length(colnames(x)[25:ncol(x)])
+p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) # intercept and cell components not included in selection
+
+y <- data[,'SLPA91']
+
+# Cross validation
+set.seed(1997)
+kcvlasso <- cv.glmnet(x, y, nfolds = 5,
+                      type.measure = "deviance",
+                      penalty.factor = p.fac)
+
+ind_min <- which.min(kcvlasso$cvm)
+selected_lambda <- kcvlasso$lambda[ind_min]
+
+# Best lasso model
+set.seed(1997)
+lasso <- glmnet(x, y,
+                lambda = selected_lambda,
+                type.measure = "deviance", 
+                penalty.factor = p.fac)
+lasso_beta <- lasso$beta
+mrs_coefs <- lasso_beta[grep("cg", rownames(lasso_beta)), "s0"]
+mrs_coefs <- as.data.frame(mrs_coefs[which(mrs_coefs != 0)])
+names(mrs_coefs) <- 'coef_MinSpO2'
+mrs_coefs$CpG <- row.names(mrs_coefs)
+minO2 <- merge(mrs_coefs,chr_all[,c(2,12,16)],by='CpG')
+nrow(minO2)
+```
+
+### Diabetes
+```{r}
+# Prepare x and y matrices
+p2 <- phe[,c(102,3,7,12,15,8,103:107,109,139:143,38)]
+p2$DIABETES2_INDICATOR <- ifelse(p2$DIABETES2_INDICATOR == 'Normal',0,1)
+p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
+p2 <- cbind(p2[,c(3,5:17)], dummy(p2[,1:16]))
+p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$Row_names <- row.names(p2)
+d$Row_names <- row.names(d)
+data <- merge(p2, d, by='Row_names') 
+data$DIABETES2_INDICATOR<-as.character(data$DIABETES2_INDICATOR)
+data <- data %>% remove_rownames %>% column_to_rownames('Row_names')
+data$intercept <- rep(1, nrow(data))
+data <- data[complete.cases(data$EV1),]
+data <- data[complete.cases(data$BMI),]
+
+# Prepare X matrix
+x<-as.matrix(data[,c(ncol(data), 1:13, 15:20, 23:26, 28:(ncol(data)-1))])
+
+# apply penalty only on CpGs and not on other variables
+n_chem <- length(colnames(x)[25:ncol(x)])
+p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) 
+# intercept and cell components not included in selection
+
+y <- data[,'DIABETES2_INDICATOR']
+
+# CV
+set.seed(1997)
+kcvlasso <- cv.glmnet(x, y, nfolds = 5,
+                      type.measure = "class", family='binomial',
+                      penalty.factor = p.fac)
+
+ind_min <- which.min(kcvlasso$cvm)
+selected_lambda <- kcvlasso$lambda[ind_min]
+
+# best lasso model
+set.seed(1997)
+lasso <- glmnet(x, y,
+                lambda = selected_lambda,
+                type.measure = "class", family='binomial',
+                penalty.factor = p.fac)
+lasso_beta <- lasso$beta
+mrs_coefs <- lasso_beta[grep("cg", rownames(lasso_beta)), "s0"]
+mrs_coefs <- as.data.frame(mrs_coefs[which(mrs_coefs != 0)])
+names(mrs_coefs) <- 'coef_diab'
+mrs_coefs$CpG <- row.names(mrs_coefs)
+names(chr_all)[2]<-'CpG'
+diab <- merge(mrs_coefs,chr_all[,c(2,12,16)],by='CpG')
+nrow(diab)
+```
+
+### Hypertension
+```{r}
+# Prepare x and y matrices
+p2 <- phe[,c(102,3,7,12,15,8,103:107,109,139:143,94)] 
+p2$HYPERTENSION <- ifelse(p2$HYPERTENSION == 'Normal',0,1)
+p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
+p2 <- cbind(p2[,c(3,5:17)], dummy(p2[,1:16]))
+p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$Row_names <- row.names(p2)
+d$Row_names <- row.names(d)
+data <- merge(p2, d, by='Row_names') 
+data$HYPERTENSION<-as.character(data$HYPERTENSION)
+data <- data %>% remove_rownames %>% column_to_rownames('Row_names')
+data$intercept <- rep(1, nrow(data))
+data <- data[complete.cases(data$EV1),]
+data <- data[complete.cases(data$BMI),]
+
+# Prepare X matrix
+x<-as.matrix(data[,c(ncol(data), 1:13, 15:20, 23:26, 28:(ncol(data)-1))])
+
+# apply penalty only on CpGs and not on other variables
+n_chem <- length(colnames(x)[25:ncol(x)])
+p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) 
+# intercept and cell components not included in selection
+
+y <- data[,'HYPERTENSION']
+
+# CV
+set.seed(1997)
+kcvlasso <- cv.glmnet(x, y, nfolds = 5,
+                      type.measure = "class", family='binomial',
+                      penalty.factor = p.fac)
+
+ind_min <- which.min(kcvlasso$cvm)
+selected_lambda <- kcvlasso$lambda[ind_min]
+
+# best lasso model
+set.seed(1997)
+lasso <- glmnet(x, y,
+                lambda = selected_lambda,
+                type.measure = "class", family='binomial',
+                penalty.factor = p.fac)
+lasso_beta <- lasso$beta
+mrs_coefs <- lasso_beta[grep("cg", rownames(lasso_beta)), "s0"]
+mrs_coefs <- as.data.frame(mrs_coefs[which(mrs_coefs != 0)])
+names(mrs_coefs) <- 'coef_hyper'
+mrs_coefs$CpG <- row.names(mrs_coefs)
+Hyper <- merge(mrs_coefs,chr_all[,c(2,12,16)],by='CpG')
+nrow(Hyper)
+```
+
+
+## OSA with and without EDS
+
+### Data preparation
+```{r}
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+# OSA with EDS and without
+sdata <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Datasets/metsleep_covariates_20200129.csv") 
+sdata <- sdata[-which(duplicated(sdata)),]
+scsx <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240314_SOL_PRS_CSx.csv')
+ty <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/HCHS/20240130_Tianyi_HCHS_PRS_std.txt')
+p_link <- read_sas('/Volumes/Sofer Lab/HCHS_SOL/Datasets/hchs_dbgap_id_mapping_200727.sas7bdat')
+colnames(p_link)[1] <- 'ID_old'
+p_link$ID <- str_remove(p_link$ID_old, "^0+")
+names(p_link)[2] <- 'SOL_ID'
+sdata <- merge(sdata, p_link[,2:3], by='ID')
+sdata <- merge(sdata, scsx[,c(1,12,13)], by='SOL_ID')
+names(ty)[c(1,3)] <- c('SOL_ID','std_ty')
+sdata <- merge(sdata, ty[,c(1,3)], by='SOL_ID')
+sdata$OSA <- ifelse(sdata$SLPA54>5,'OSA','Norm')
+sdata$EDS <- ifelse(sdata$ESS>10,'EDS','Norm')
+
+# nOSA: no OSA; OE: OSA with EDS; OnE: OSA without EDS
+sdata$oe <- ifelse(sdata$OSA=='OSA' & sdata$EDS=='EDS','OE',
+                 ifelse(sdata$OSA=='OSA' & sdata$EDS=='Norm', 'OnE','nOSA'))
+table(sdata$oe)
+sdata$oe <- relevel(as.factor(sdata$oe), ref = 'nOSA')
+levels(sdata$oe)
+names(ev5)[2] <- 'SOL_ID'
+sdata <- merge(sdata, ev5[,c(2,5:9)],by='SOL_ID')
+survey_base <- svydesign(id = ~PSU_ID,
+                          strata = ~STRAT,
+                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
+                          nest = TRUE,
+                          data = sdata)
+# OSA vs none-OSA
+sdata$OSA <- relevel(as.factor(sdata$OSA), ref = 'Norm')
+table(sdata$OSA)
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=sdata)
+```
+
+### Multinomial logistic regression
+```{r}
+tab <- data.frame(pheno=rep(c('OE_nOSA','OnE_nOSA','OSA_nOSA'),3),
+                  prs=c(rep('std_ty',3),rep('CSx_ssum',3),rep('CSx_wsum',3)),
+                  Coef=rep(1,9),SE=rep(1,9), p=rep(1,9),lower=rep(1,9),upper=rep(1,9))
+# PRS_Huang
+# OSA-EDS
+form <- as.formula(paste0('oe', paste('~ std_ty + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+vglm_mod <- svy_vglm(form, design = survey_base, family = multinomial(refLevel = 'nOSA'), drop.unused.levels = TRUE)
+mnm <- as.data.frame(summary(vglm_mod)$coeftable)
+ci <- as.data.frame(confint(vglm_mod))
+names(ci) <- c('lower','upper')
+mnm <- cbind(mnm,ci)
+tab[1:2,3:7] <- mnm[3:4,c(1,2,4:6)]
+
+# OSA vs none-OSA
+form <- as.formula(paste0('OSA', paste('~ std_ty + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+tab$Coef[3] <- summary(mod)$coefficients[2,1]
+tab$SE[3] <- summary(mod)$coefficients[2,2]
+tab$p[3] <- summary(mod)$coefficients[2,4]
+tab$lower[3] <- confint(mod)[2,1]
+tab$upper[3] <- confint(mod)[2,2]
+
+# PRS_CSx simple sum
+# OSA-EDS
+form <- as.formula(paste0('oe', paste('~ CSx_ssum + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+vglm_mod <- svy_vglm(form, design = survey_base, family = multinomial(refLevel = 'nOSA'), drop.unused.levels = TRUE)
+mnm <- as.data.frame(summary(vglm_mod)$coeftable)
+ci <- as.data.frame(confint(vglm_mod))
+names(ci) <- c('lower','upper')
+mnm <- cbind(mnm,ci)
+tab[4:5,3:7] <- mnm[3:4,c(1,2,4:6)]
+
+# OSA vs none-OSA
+form <- as.formula(paste0('OSA', paste('~ CSx_ssum + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+tab$Coef[6] <- summary(mod)$coefficients[2,1]
+tab$SE[6] <- summary(mod)$coefficients[2,2]
+tab$p[6] <- summary(mod)$coefficients[2,4]
+tab$lower[6] <- confint(mod)[2,1]
+tab$upper[6] <- confint(mod)[2,2]
+
+# PRS_CSx weighted sum
+# OSA-EDS
+form <- as.formula(paste0('oe', paste('~ CSx_wsum + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+vglm_mod <- svy_vglm(form, design = survey_base, family = multinomial(refLevel = 'nOSA'), drop.unused.levels = TRUE)
+mnm <- as.data.frame(summary(vglm_mod)$coeftable)
+ci <- as.data.frame(confint(vglm_mod))
+names(ci) <- c('lower','upper')
+mnm <- cbind(mnm,ci)
+tab[7:8,3:7] <- mnm[3:4,c(1,2,4:6)]
+
+# OSA vs none-OSA
+form <- as.formula(paste0('OSA', paste('~ CSx_wsum + AGE + BMI + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) 
+mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+tab$Coef[9] <- summary(mod)$coefficients[2,1]
+tab$SE[9] <- summary(mod)$coefficients[2,2]
+tab$p[9] <- summary(mod)$coefficients[2,4]
+tab$lower[9] <- confint(mod)[2,1]
+tab$upper[9] <- confint(mod)[2,2]
+
+#write.csv(tab,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240518_MNR_OE.csv',row.names = F)
+
+```
+
+
+
+
+
+
+

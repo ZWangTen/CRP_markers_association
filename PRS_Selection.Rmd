@@ -1,0 +1,135 @@
+---
+title: "PRS selection and Table S4"
+author: "Leslie (ZW)"
+date: "2024-05-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+```
+
+# Read in the data
+```{r}
+# MESA phenotype data
+crp <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/MESA_data/20240229_MESA_crp.csv')
+# link id
+lid <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/freeze.10.draft.sample.mapping.2021dec20.tab')
+lid <- subset(lid,STUDY%in%'MESA')
+names(lid)[1]<-'IID'
+# Genetic PCs
+pc <- read.delim("/Volumes/Sofer Lab/MESA/MESA_freeze10_pc_relatedness/20230309_TOPMed_freeze10b_MESA_10PCs.txt")
+names(pc)[1] <- 'IID'
+
+# PRSs
+ty <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240130_Tianyi_MESA_PRS_std.txt')
+prs <- merge(lid[,1:2],ty,by='IID')
+names(prs)[2] <- 'sidno'
+csx <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240119_CRP_MESA_std_PRS_CSx_PRSs.txt')
+gwhq <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240227_GWAMA_BBJ_UKBB_COM_hq_hg38_MESA_bim_matched_std.txt')
+gwnhq <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240227_GWAMA_BBJ_UKBB_COM_non_hq_hg38_MESA_bim_matched_std.txt')
+ukhq <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240208_UKBB_CRP_combined_hq_hg38_MESA_bim_matched_std.txt')
+uknhq <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/MESA/20240208_UKBB_CRP_combined_non_hq_hg38_MESA_bim_matched_std.txt')
+```
+
+# Association analysis of PRSs on CRP 
+```{r}
+# Tianyi
+data <- merge(prs[,c(1,2,4)], crp, by='sidno')
+data <- merge(data, pc[,1:6], by='IID')
+names(data)[3] <- 'prs_TY'
+data <- data[complete.cases(data$crp1),] # 6252 people with CRP
+data$gender1 <- as.character(data$gender1)
+data$race1c <- as.character(data$race1c)
+data$site1c <- as.character(data$site1c)
+hist(crp$crp1) 
+# Skewed, proceed with log transformation on CRP
+fit <- lm(log(crp1)~prs_TY +age1c +gender1 +bmi1c +race1c +site1c +PC_1 +PC_2 +PC_3 +PC_4 +PC_5, data=data)
+s <- summary(fit)
+v <- as.data.frame(cbind(anova(fit), PctExp=anova(fit)$"Sum Sq"/sum(anova(fit)$"Sum Sq")*100))[1,6]
+res <- data.frame(prs='prs_TY', coef=fit$coefficients[2], se=s$coefficients[2,2], 
+                  pval=s$coefficients[2,4], vexp=v)
+
+# UKBB
+dt <- merge(data[,c(1,2,4:14)], uknhq[,c(1,10:17)], by='IID') 
+r.ukbb <- data.frame(prs=paste0(names(uknhq)[2:9],'_std'), coef=1:8, se=1:8, pval=1:8, vexp=1:8)
+for (i in 1:8){
+  fit <- lm(log(crp1) ~dt[,i+13] +age1c +gender1 +bmi1c +race1c +site1c +PC_1 +PC_2 +PC_3 +PC_4 +PC_5, data=dt)
+  s <- summary(fit)
+  v <- as.data.frame(cbind(anova(fit), PctExp=anova(fit)$"Sum Sq"/sum(anova(fit)$"Sum Sq")*100))[1,6]
+  r.ukbb$coef[i] <- fit$coefficients[2]
+  r.ukbb$pval[i] <- s$coefficients[2,4]
+  r.ukbb$se[i] <- s$coefficients[2,2]
+  r.ukbb$vexp[i] <- v
+}
+
+# GWAMA
+dt <- merge(data[,c(1,2,4:14)], gwhq[,c(1,10:17)], by='IID') 
+r.bbuk <- data.frame(prs=paste0(names(gwhq)[2:9], '_std'), coef=1:8, se=1:8, pval=1:8, vexp=1:8)
+for (i in 1:8){
+  fit <- lm(log(crp1) ~dt[,i+13] +age1c +gender1 +bmi1c +race1c +site1c +PC_1 +PC_2 +PC_3 +PC_4 +PC_5, data=dt)
+  s <- summary(fit)
+  v <- as.data.frame(cbind(anova(fit), PctExp=anova(fit)$"Sum Sq"/sum(anova(fit)$"Sum Sq")*100))[1,6]
+  r.bbuk$coef[i] <- fit$coefficients[2]
+  r.bbuk$pval[i] <- s$coefficients[2,4]
+  r.bbuk$se[i] <- s$coefficients[2,2]
+  r.bbuk$vexp[i] <- v
+}
+
+# CSX
+dt <- merge(data[,c(1,2,4:14)], csx, by='IID') 
+mod1 <- lm(log(crp1) ~ PRS_AFR_std + PRS_EUR_std + PRS_AMR_std +age1c +gender1 +bmi1c +race1c 
+           +site1c +PC_1 +PC_2 +PC_3 +PC_4 +PC_5, data=dt)
+s1 <- summary(mod1)
+v1 <- as.data.frame(cbind(anova(mod1), PctExp=anova(mod1)$"Sum Sq"/sum(anova(mod1)$"Sum Sq")*100))
+csx.comb <- cbind(s1$coefficients[2:4,],vexp=v1[1:3,6])[,c(1,2,4,5)]
+colnames(csx.comb) <- c('coef', 'se', 'pval', 'vexp')
+csx.comb <- csx.comb %>% as.data.frame() %>% mutate(prs = c('AFR', 'EUR', 'AMR'))
+csx.comb <- csx.comb[,c(5,1:4)]
+```
+
+# Generate results for Table S3
+```{r}
+res_TY <- rbind(data.frame(prs='48 SNPs from Huang et al.', coef=NA, se=NA, pval=NA, vexp=NA), res)
+res_ukbb <- rbind(data.frame(prs='UKBB', coef=NA, se=NA, pval=NA, vexp=NA), r.ukbb)
+res_bbuk <- rbind(data.frame(prs='BBJ + UKBB', coef=NA, se=NA, pval=NA, vexp=NA), r.bbuk)
+res_csx <- rbind(data.frame(prs='PRS_CSx', coef=NA, se=NA, pval=NA, vexp=NA), csx.comb)
+res.all <- rbind(res_bbuk, res_csx, res_ukbb, res_TY)
+res.all$pval <- as.character(res.all$pval)
+res.all <- res.all %>% mutate_if(is.numeric, round, digits=2)
+res.all[is.na(res.all)] <- ''
+#write.csv(res.all, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S3.csv', row.names = FALSE)
+kable(res.all, row.names = FALSE)
+```
+
+# Select PRS based on highest variance explained and compute weights. Then generate Table S4
+```{r}
+# Based on variance explained, we will move forward using PRS_CSx
+pcs <- merge(csx, pc[,1:6], by='IID')
+pcs <- merge(pcs, lid[,1:2], by='IID')
+names(pcs)[17] <- 'sidno'
+data <- merge(pcs[,7:17], crp, by='sidno')
+data <- data[complete.cases(data$crp1),]
+
+# Compute weights for PRS-CRP
+mod <- lm(log(crp1) ~ PRS_AFR_std + PRS_EUR_std + PRS_AMR_std + age1c + as.character(gender1) +
+           bmi1c + as.character(site1c) + PC_1 + PC_2 + PC_3 + PC_4 + PC_5, data=data)
+coef <- as.data.frame(summary(mod)$coefficients)
+
+# Generate results table S4
+coef <- coef[2:4,c(1,2,4)]
+coef$PRS_CSx <- c('AFR', 'EUR', 'AMR')
+coef <- coef[,c(4,1:3)]
+names(coef)[4] <- 'p value'
+coef$`p value` <- as.character(coef$`p value`)
+coef <- coef %>% mutate_if(is.numeric, round, digits=3)
+# write.csv(coef,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S4.csv', row.names = FALSE)
+kable(coef, row.names = FALSE)
+```
+
+
+
+
+
