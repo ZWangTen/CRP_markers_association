@@ -2,7 +2,7 @@
 title: "Association analysis using Survey regression in HCHS/SOL"
 author: "Leslie (ZW)"
 date: "2024-05-13"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
