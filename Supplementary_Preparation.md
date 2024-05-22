@@ -1,21 +1,11 @@
----
-title: "Supplementary Info Preparation"
-author: "Leslie (ZW)"
-date: "2024-05-13"
-output: github_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(finalfit)
-library(knitr)
-library(forestploter)
-library(grid)
-```
+Supplementary Info Preparation
+================
+Leslie (ZW)
+2024-05-13
 
 # Create Supplementary Table S1
-```{r}
+
+``` r
 pheno_MESA <-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/MESA_data/20240229_MESA_crp.csv')
 pheno_MESA <- pheno_MESA[complete.cases(pheno_MESA$crp1),]
 
@@ -40,11 +30,21 @@ Demo_var <- c("age1c", "bmi1c", "crp1", 'gender1', 'race1c')
 Tab.S1 <- pheno_MESA %>% 
   summary_factorlist("CRP_group", Demo_var, na_include=FALSE,cont = "mean") %>%
   ff_percent_only() 
+```
+
+    ## Warning: Unknown columns: `p`
+
+``` r
 # Keep only 1 level for variables with 2 levels
 keep <- c(1:4,6:9) 
 Tab.S1 <- Tab.S1[keep,]
 Tab.S1.overall <- pheno_MESA %>% summary_factorlist('overall', Demo_var, na_include=FALSE, cont = "mean") %>%
   ff_percent_only()
+```
+
+    ## Warning: Unknown columns: `p`
+
+``` r
 Tab.S1.overall <- Tab.S1.overall[keep,]
 Tab.S1 <- merge(Tab.S1, Tab.S1.overall, by=c('label','levels'))
 # Rearrange the table
@@ -63,12 +63,29 @@ Tab.S1 <- rbind(Tab.S1, group_name)
 Tab.S1 <- Tab.S1[c(1:4,9,5:8),]
 Tab.S1[is.na(Tab.S1)] <- ''
 kable(Tab.S1, row.names = FALSE)
+```
+
+| Variable               | Overall     | Low (\<1)   | Borderline (1-3) | High (\>3) |
+|:-----------------------|:------------|:------------|:-----------------|:-----------|
+| Age (Mean (SD))        | 62.2 (10.2) | 61.5 (10.7) | 62.9 (10.2)      | 62.3 (9.8) |
+| BMI (Mean (SD))        | 28.3 (5.5)  | 25.6 (4.2)  | 28.0 (4.6)       | 30.8 (6.0) |
+| CRP (mg/L) (Mean (SD)) | 3.8 (5.9)   | 0.6 (0.2)   | 1.8 (0.6)        | 8.3 (8.0)  |
+| Gender (%) - Female    | 52.4        | 42.0        | 48.0             | 65.1       |
+| Race (%)               |             |             |                  |            |
+| White                  | 39.3        | 41.2        | 39.9             | 37.1       |
+| Black                  | 26.0        | 20.2        | 24.6             | 32.3       |
+| Chinese                | 12.1        | 22.2        | 11.5             | 4.2        |
+| Hispanic/Latino        | 22.6        | 16.3        | 24.0             | 26.4       |
+
+``` r
 #write.csv(Tab.S1, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S1.csv', row.names = FALSE)
 ```
 
 # Create Figure S1
+
 ## Data Preparation
-```{r}
+
+``` r
 rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
 m1.num <- subset(rmrs1, pheno%in%c('SLPA54','SLPA91','SLPA92') & group%in%'MRS_CRP')
 m1.cat <- subset(rmrs1, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
@@ -100,7 +117,8 @@ FigS1C$upper<-exp(FigS1C$upper)
 ```
 
 ## Fig S1A
-```{r, fig.width=10}
+
+``` r
 row.names(FigS1A) <- 1:nrow(FigS1A)
 sub <- split(FigS1A, FigS1A$mod) 
 m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
@@ -175,8 +193,11 @@ plot <- forest(FigS1A[,c(1,12,13,11,10)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
 ## Fig S1B
-```{r, fig.width=10}
+
+``` r
 row.names(FigS1B) <- 1:nrow(FigS1B)
 sub <- split(FigS1B, FigS1B$mod) 
 m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
@@ -238,8 +259,11 @@ plot <- forest(FigS1B[,c(1,12,13,11,10)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 ## Fig S1C
-```{r, fig.width=10}
+
+``` r
 row.names(FigS1C) <- 1:nrow(FigS1C)
 sub <- split(FigS1C, FigS1C$mod) 
 m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
@@ -301,10 +325,13 @@ plot <- forest(FigS1C[,c(1,12,13,11,10)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
 # Create Figure S2
 
 ## Fig S2A
-```{r, fig.width=10}
+
+``` r
 womrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_wo.csv')
 
 # Figure S2A
@@ -412,8 +439,11 @@ plot <- forest(pnum[,c(1,20,21,19,18)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
 ## Fig S2B
-```{r, fig.width=10}
+
+``` r
 wmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_w.csv')
 
 # Figure S2A
@@ -521,9 +551,13 @@ plot <- forest(pnum[,c(1,20,21,19,18)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
 # Create Figure S3
+
 ## Data Preparation
-```{r}
+
+``` r
 woprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
 wo.num <- subset(woprs, pheno%in%c('lgCrp','SLPA54','SLPA91','SLPA92') & group %in% 'MRS_CRP')
 wo.cat <- subset(woprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
@@ -546,7 +580,8 @@ FigS3B$upper <- exp(FigS3B$upper)
 ```
 
 ## Fig S3A
-```{r, fig.width=10}
+
+``` r
 row.names(FigS3A) <- 1:nrow(FigS3A)
 sub <- split(FigS3A, FigS3A$mod) 
 m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
@@ -621,8 +656,11 @@ plot <- forest(FigS3A[,c(1,12,13,11,10)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
 ## Fig S3B
-```{r, fig.width=10}
+
+``` r
 row.names(FigS3B) <- 1:nrow(FigS3B)
 sub <- split(FigS3B, FigS3B$mod) 
 m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
@@ -684,11 +722,13 @@ plot <- forest(FigS3B[,c(1,12,13,11,10)],
 plot
 ```
 
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
 # Create Supplementary Table S5
 
 Creation of table S3-S4 please refer to PRS_selection.Rmd
 
-```{r}
+``` r
 Tab.S5 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240518_MNR_OE.csv')
 Tab.S5$CI <- paste0('(', round(exp(Tab.S5$lower),2), ', ', round(exp(Tab.S5$upper),2), ')')
 Tab.S5 <- Tab.S5[,c(1,2,3,5,8)]
@@ -699,13 +739,29 @@ Tab.S5$`PRS type` <- c(rep('PRS_ty', 3), rep('PRS_ssum', 3), rep('PRS_wsum', 3))
 Tab.S5$`Odds ratio` <- round(exp(Tab.S5$`Odds ratio`),2)
 Tab.S5$`p value` <- round(Tab.S5$`p value`,3)
 kable(Tab.S5, row.names = F)
+```
+
+| Comparison                | PRS type | Odds ratio | p value | 95% CI       |
+|:--------------------------|:---------|-----------:|--------:|:-------------|
+| OSA with EDS VS no OSA    | PRS_ty   |       1.04 |   0.613 | (0.89, 1.21) |
+| OSA without EDS VS no OSA | PRS_ty   |       0.98 |   0.546 | (0.9, 1.06)  |
+| All OSA VS no OSA         | PRS_ty   |       0.99 |   0.856 | (0.92, 1.07) |
+| OSA with EDS VS no OSA    | PRS_ssum |       0.84 |   0.031 | (0.72, 0.98) |
+| OSA without EDS VS no OSA | PRS_ssum |       0.96 |   0.228 | (0.89, 1.03) |
+| All OSA VS no OSA         | PRS_ssum |       0.93 |   0.052 | (0.86, 1)    |
+| OSA with EDS VS no OSA    | PRS_wsum |       0.87 |   0.031 | (0.77, 0.99) |
+| OSA without EDS VS no OSA | PRS_wsum |       0.96 |   0.251 | (0.88, 1.03) |
+| All OSA VS no OSA         | PRS_wsum |       0.94 |   0.083 | (0.87, 1.01) |
+
+``` r
 #write.csv(Tab.S5, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S5.csv', row.names = FALSE)
 ```
 
 # Create Supplementary Table S6-S8
 
 ## Read Data
-```{r}
+
+``` r
 ahi <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_AHI.csv')
 minO2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_MinO2.csv')
 diab <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_Diab.csv')
@@ -714,7 +770,8 @@ tab2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Table
 ```
 
 ## Table S6
-```{r}
+
+``` r
 Tab.S6 <- merge(ahi, tab2[,c(1,4)], by='CpG', all.x=T)
 Tab.S6[is.na(Tab.S6)] <- ''
 Tab.S6 <- Tab.S6[order(Tab.S6$Phenotypes, decreasing = T),]
@@ -726,8 +783,18 @@ names(Tab.S6)[2:5] <- c('Coefficient', 'CHR', 'Gene Name', 'Overlap')
 kable(head(Tab.S6), row.names = FALSE)
 ```
 
+| CpG        | Coefficient | CHR | Gene Name   | Overlap            |
+|:-----------|------------:|----:|:------------|:-------------------|
+| cg00574958 |       -3.70 |  11 | CPT1A;CPT1A | Min SpO2, Diabetes |
+| cg08309687 |       -5.93 |  21 |             | Min SpO2, Diabetes |
+| cg00816397 |       62.83 |   1 | PFDN2;NIT1  | Min SpO2           |
+| cg04103088 |       -4.98 |   4 |             | Min SpO2           |
+| cg09048665 |       -0.90 |  16 | WDR90       | Min SpO2           |
+| cg10726559 |      -24.91 |  14 | MIR127;RTL1 | Min SpO2           |
+
 ## Table S7
-```{r}
+
+``` r
 Tab.S7 <- merge(minO2, tab2[,c(1,4)], by='CpG', all.x=T)
 Tab.S7[is.na(Tab.S7)] <- ''
 Tab.S7 <- Tab.S7[order(Tab.S7$Phenotypes, decreasing = T),]
@@ -739,8 +806,18 @@ names(Tab.S7)[2:5] <- c('Coefficient', 'CHR', 'Gene Name', 'Overlap')
 kable(head(Tab.S7), row.names = FALSE)
 ```
 
+| CpG        | Coefficient | CHR | Gene Name   | Overlap      |
+|:-----------|------------:|----:|:------------|:-------------|
+| cg00574958 |        4.41 |  11 | CPT1A;CPT1A | AHI Diabetes |
+| cg08309687 |        0.58 |  21 |             | AHI Diabetes |
+| cg00816397 |      -61.31 |   1 | PFDN2;NIT1  | AHI          |
+| cg04103088 |        0.02 |   4 |             | AHI          |
+| cg09048665 |        4.56 |  16 | WDR90       | AHI          |
+| cg10726559 |        5.64 |  14 | MIR127;RTL1 | AHI          |
+
 ## Table S8
-```{r}
+
+``` r
 Tab.diab <- merge(diab, tab2[,c(1,4)], by='CpG')
 Tab.diab$Phenotypes <- gsub("Diabetes", "", Tab.diab$Phenotypes)
 Tab.diab <- Tab.diab[order(Tab.diab$Phenotypes, decreasing = T),]
@@ -762,3 +839,12 @@ Tab.S8 <- rbind(Tab.diab, Tab.hyp)
 #write.csv(Tab.S8, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S8.csv', row.names = FALSE)
 kable(tail(Tab.S8), row.names = FALSE)
 ```
+
+| CpG        | Trait        | Coefficient | CHR | Gene Name   | Overlap      |
+|:-----------|:-------------|------------:|----:|:------------|:-------------|
+| cg18852857 | Diabetes     |        0.08 |  22 | ADRBK2      | AHI          |
+| cg11607604 | Diabetes     |       -3.72 |  13 | FARP1;FARP1 | MinimumSpO2, |
+| cg12450708 | Diabetes     |        0.05 |  10 |             | MinimumSpO2, |
+| cg06690548 | Hypertension |       -0.79 |   4 | SLC7A11     | AHI          |
+| cg17061862 | Hypertension |       -0.01 |  11 |             | AHI          |
+| cg14476101 | Hypertension |       -0.31 |   1 | PHGDH       | MinimumSpO2, |

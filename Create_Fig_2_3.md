@@ -1,21 +1,11 @@
----
-title: "Create Figure 2 and 3"
-author: "Leslie (ZW)"
-date: "2024-05-13"
-output: github_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(forestploter)
-library(tidyverse)
-library(grid)
-library(ggplot2)
-library(gridExtra)
-```
+Create Figure 2 and 3
+================
+Leslie (ZW)
+2024-05-13
 
 # Create figure 2
-```{r}
+
+``` r
 # Read data
 rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
 rprs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_PRS_CRP.csv')
@@ -57,7 +47,15 @@ mid<-ggplot(fc,aes(y = fct_rev(labels),x=Beta,xmin=lower,xmax=upper)) + theme_cl
   labs(x="Coefficient Estimate",y='') + theme(legend.position="none") +
   theme(axis.line.y = element_blank(), axis.ticks.y= element_blank(),
         axis.text.y= element_blank(), axis.title.y= element_blank())
+```
 
+    ## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+    ## ℹ Please use `linewidth` instead.
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
+``` r
 tab<-ggplot(data = fctab, aes(y = labels)) +
   geom_hline(aes(yintercept = labels, colour = colour), size = 7) +
   geom_text(aes(x = 0, label = labels), hjust = 0, fontface = "bold") +
@@ -68,11 +66,13 @@ tab<-ggplot(data = fctab, aes(y = labels)) +
   theme(plot.margin = margin(5, 0, 35, 0))
 
 grid.arrange(tab,mid,ncol=2)
-
 ```
 
+![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
 # Create Figure 3
-```{r}
+
+``` r
 # Data preparation
 rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
 rmrs$fdr <- 1
@@ -98,7 +98,8 @@ Fig3C$upper <- exp(Fig3C$upper)
 ```
 
 ## Forest plot for Figure 3A
-```{r,fig.width=10}
+
+``` r
 row.names(Fig3A) <- 1:nrow(Fig3A)
 sub <- split(Fig3A, Fig3A$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
@@ -212,8 +213,11 @@ plot <- forest(Fig3A[,c(1,24,23,26,25,22)],
 plot
 ```
 
+![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
 ## Forest plot for Figure 3B
-```{r,fig.width=10}
+
+``` r
 row.names(Fig3B) <- 1:nrow(Fig3B)
 sub <- split(Fig3B, Fig3B$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
@@ -327,8 +331,11 @@ plot <- forest(Fig3B[,c(1,24,23,26,25,22)],
 plot
 ```
 
+![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 ## Forest plot for Figure 3C - Odds Ratio
-```{r,fig.width=10}
+
+``` r
 row.names(Fig3C) <- 1:nrow(Fig3C)
 sub <- split(Fig3C, Fig3C$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
@@ -437,6 +444,4 @@ plot <- forest(Fig3C[,c(1,24,23,26,25,22)], #
 plot
 ```
 
-
-
-
+![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
