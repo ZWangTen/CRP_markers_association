@@ -17,25 +17,27 @@ library(gridExtra)
 # Create figure 2
 ```{r}
 # Read data
-rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
-rprs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_PRS_CRP.csv')
-pl<-rbind(rmrs,rprs)
+rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240523_PRS_CRP.csv')
+rprs <- rprs[c(1:28),]
+pl <- rbind(rmrs,rprs)
 
-pl<-pl[order(pl$pheno),]
+pl <- pl[order(pl$pheno),]
 row.names(pl)<-1:nrow(pl)
 pl$se <- (pl$upper - pl$lower) / (2 * qnorm(0.975))
 names(pl) <- c('name','beta','pvalue','lower','upper','CRP_measures','se')
-pl$group=c(rep('Comorbidities',12),rep('Other sleep traits',4),rep('Comorbidities',4),
-           rep('NA',3),rep('Other sleep traits',8),rep('Obstructive sleep apnea',16),
-           rep('Other sleep traits',8))
+pl$group <- c(rep('Comorbidities',4),rep('Other sleep traits',4),rep('Comorbidities',8),
+           rep('Comorbidities',4), rep('NA',3), rep('Other sleep traits',8),
+           rep('Obstructive sleep apnea',16), rep('Other sleep traits',8))
 
 # Figure 2
-data=pl[21:23,]
-data$labels=paste0(data$pheno,' (',data$group,')')
+data <- pl[21:23,]
+data$labels <- paste0(data$pheno,' (',data$group,')')
+data$CRP_measures <- c("MRS-CRP",  "PRS-EUR",  "PRS-wsum")
 
 fc <- data.frame(labels = data$CRP_measures, Beta= round(data$beta,2),
                  lower=round(data$lower,2),upper=round(data$upper,2),
-                 p.value=c('3.30e-38','1.12e-12','1e-14'))
+                 p.value=c('3.30e-38','2.17e-14','5.70e-15'))
 
 fc$labels<-as.factor(fc$labels)
 fc<-fc[order(fc$labels),]
@@ -52,7 +54,7 @@ mid<-ggplot(fc,aes(y = fct_rev(labels),x=Beta,xmin=lower,xmax=upper)) + theme_cl
   geom_hline(aes(yintercept = labels, colour = colour), size = 7) +scale_colour_identity() +
    geom_point(aes(x=Beta), shape=15, size=3) + 
   geom_linerange(aes(xmin=lower, xmax=upper)) + geom_vline(xintercept = 0, linetype="dashed") +
-  annotate("text", x = .1, y = 12, label = "CRP_blood",fontface='bold') +
+  annotate("text", x = .1, y = 12, label = "Blood-CRP",fontface='bold') +
   coord_cartesian(ylim=c(1,4)) +
   labs(x="Coefficient Estimate",y='') + theme(legend.position="none") +
   theme(axis.line.y = element_blank(), axis.ticks.y= element_blank(),
@@ -80,7 +82,6 @@ rmrs$fdr[1:14] <- p.adjust(rmrs[1:14,]$p.val,method='fdr')
 rmrs$fdr[15:27] <- p.adjust(rmrs[15:27,]$p.val,method='fdr')
 rmrs$pheno[c(8:9,21:22)] <- rep(c('cog_global', 'cog_change'), 2)
 
-rprs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_PRS_CRP.csv')
 rprs$fdr <- 1
 rprs$fdr[1:14] <- p.adjust(rprs[1:14,]$p.val,method='fdr')
 rprs$fdr[15:28] <- p.adjust(rprs[15:28,]$p.val,method='fdr')
@@ -132,14 +133,14 @@ Fig3A$bl_coef <- round(Fig3A$bl_coef,3)
 Fig3A$mrs_coef <- round(Fig3A$mrs_coef,3)
 Fig3A$ss_coef <- round(Fig3A$ss_coef,3)
 Fig3A$ws_coef <- round(Fig3A$ws_coef,3)
-Fig3A$bl_fdr <- round(Fig3A$bl_fdr,3)
-Fig3A$mrs_fdr <- round(Fig3A$mrs_fdr,3)
-Fig3A$ss_fdr <- round(Fig3A$ss_fdr,3)
-Fig3A$ws_fdr <- round(Fig3A$ws_fdr,3)
-Fig3A$bl_p.val <- round(Fig3A$bl_p.val,3)
-Fig3A$mrs_p.val <- round(Fig3A$mrs_p.val,3)
-Fig3A$ss_p.val <- round(Fig3A$ss_p.val,3)
-Fig3A$ws_p.val <- round(Fig3A$ws_p.val,3)
+Fig3A$bl_fdr <- format(Fig3A$bl_fdr, scientific=TRUE, digit=2)
+Fig3A$mrs_fdr <- format(Fig3A$mrs_fdr, scientific=TRUE, digit=2)
+Fig3A$ss_fdr <- format(Fig3A$ss_fdr, scientific=TRUE, digit=2)
+Fig3A$ws_fdr <- format(Fig3A$ws_fdr, scientific=TRUE, digit=2)
+Fig3A$bl_p.val <- format(Fig3A$bl_p.val, scientific=TRUE, digit=2)
+Fig3A$mrs_p.val <- format(Fig3A$mrs_p.val, scientific=TRUE, digit=2)
+Fig3A$ss_p.val <- format(Fig3A$ss_p.val, scientific=TRUE, digit=2)
+Fig3A$ws_p.val <- format(Fig3A$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
 Fig3A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -153,26 +154,19 @@ Fig3A$mrs_upper <- round(Fig3A$mrs_upper,3)
 Fig3A$ss_upper <- round(Fig3A$ss_upper,3)
 Fig3A$ws_upper <- round(Fig3A$ws_upper,3)
 
-Fig3A$CI <- paste(sprintf("(%.3f, %.3f)", Fig3A$bl_lower, Fig3A$bl_upper), 
-                sprintf("(%.3f, %.3f)", Fig3A$mrs_lower, Fig3A$mrs_upper),
-                sprintf("(%.3f, %.3f)", Fig3A$ss_lower, Fig3A$ss_upper),
-                sprintf("(%.3f, %.3f)", Fig3A$ws_lower, Fig3A$ws_upper),
+Fig3A$CI <- paste(sprintf("(%.2f, %.2f)", Fig3A$bl_lower, Fig3A$bl_upper), 
+                sprintf("(%.2f, %.2f)", Fig3A$mrs_lower, Fig3A$mrs_upper),
+                sprintf("(%.2f, %.2f)", Fig3A$ss_lower, Fig3A$ss_upper),
+                sprintf("(%.2f, %.2f)", Fig3A$ws_lower, Fig3A$ws_upper),
                 sep = "\n")
 Fig3A$Beta <- paste(sprintf("%.2f", Fig3A$bl_coef),
                 sprintf("%.2f", Fig3A$mrs_coef),
                 sprintf("%.2f", Fig3A$ss_coef),
                 sprintf("%.2f", Fig3A$ws_coef),
                 sep = "\n")
-Fig3A$q.val <- paste(sprintf("%.2f", Fig3A$bl_fdr),
-                sprintf("%.2f", Fig3A$mrs_fdr),
-                sprintf("%.2f", Fig3A$ss_fdr),
-                sprintf("%.2f", Fig3A$ws_fdr),
-                sep = "\n")
-Fig3A$p.val <- paste(sprintf("%.2f", Fig3A$bl_p.val),
-                sprintf("%.2f", Fig3A$mrs_p.val),
-                sprintf("%.2f", Fig3A$ss_p.val),
-                sprintf("%.2f", Fig3A$ws_p.val),
-                sep = "\n")
+Fig3A$q.val <- paste(Fig3A$bl_fdr, Fig3A$mrs_fdr, Fig3A$ss_fdr, Fig3A$ws_fdr,sep = "\n")
+Fig3A$p.val <- paste(Fig3A$bl_p.val, Fig3A$mrs_p.val, Fig3A$ss_p.val, Fig3A$ws_p.val, sep = "\n")
+
 Fig3A$CI[grepl("NA", Fig3A$CI)] <- "" # Any NA to blank
 Fig3A$Beta[grepl("NA", Fig3A$Beta)] <- "" # Any NA to blank
 Fig3A$q.val[grepl("NA", Fig3A$q.val)] <- "" # Any NA to blank
@@ -186,7 +180,7 @@ tm <- forest_theme(base_size = 8,
                    ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
                    footnote_gp = gpar(col = "blue"),
                    legend_name = "CRP Type",
-                   legend_value = c("Blood CRP", "MRS CRP", "PRS ssum",  "PRS wsum" ),
+                   legend_value = c("Blood CRP", "MRS CRP", "PRS EUR",  "PRS wsum" ),
                    vertline_lty = c("dashed", "dotted"),
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3
@@ -247,14 +241,14 @@ Fig3B$bl_coef <- round(Fig3B$bl_coef,3)
 Fig3B$mrs_coef <- round(Fig3B$mrs_coef,3)
 Fig3B$ss_coef <- round(Fig3B$ss_coef,3)
 Fig3B$ws_coef <- round(Fig3B$ws_coef,3)
-Fig3B$bl_fdr <- round(Fig3B$bl_fdr,3)
-Fig3B$mrs_fdr <- round(Fig3B$mrs_fdr,3)
-Fig3B$ss_fdr <- round(Fig3B$ss_fdr,3)
-Fig3B$ws_fdr <- round(Fig3B$ws_fdr,3)
-Fig3B$bl_p.val <- round(Fig3B$bl_p.val,3)
-Fig3B$mrs_p.val <- round(Fig3B$mrs_p.val,3)
-Fig3B$ss_p.val <- round(Fig3B$ss_p.val,3)
-Fig3B$ws_p.val <- round(Fig3B$ws_p.val,3)
+Fig3B$bl_fdr <- format(Fig3B$bl_fdr, scientific=TRUE, digit=2)
+Fig3B$mrs_fdr <- format(Fig3B$mrs_fdr, scientific=TRUE, digit=2)
+Fig3B$ss_fdr <- format(Fig3B$ss_fdr, scientific=TRUE, digit=2)
+Fig3B$ws_fdr <- format(Fig3B$ws_fdr, scientific=TRUE, digit=2)
+Fig3B$bl_p.val <- format(Fig3B$bl_p.val, scientific=TRUE, digit=2)
+Fig3B$mrs_p.val <- format(Fig3B$mrs_p.val, scientific=TRUE, digit=2)
+Fig3B$ss_p.val <- format(Fig3B$ss_p.val, scientific=TRUE, digit=2)
+Fig3B$ws_p.val <- format(Fig3B$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
 Fig3B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -268,26 +262,19 @@ Fig3B$mrs_upper <- round(Fig3B$mrs_upper,3)
 Fig3B$ss_upper <- round(Fig3B$ss_upper,3)
 Fig3B$ws_upper <- round(Fig3B$ws_upper,3)
 
-Fig3B$CI <- paste(sprintf("(%.3f, %.3f)", Fig3B$bl_lower, Fig3B$bl_upper), 
-                sprintf("(%.3f, %.3f)", Fig3B$mrs_lower, Fig3B$mrs_upper),
-                sprintf("(%.3f, %.3f)", Fig3B$ss_lower, Fig3B$ss_upper),
-                sprintf("(%.3f, %.3f)", Fig3B$ws_lower, Fig3B$ws_upper),
+Fig3B$CI <- paste(sprintf("(%.2f, %.2f)", Fig3B$bl_lower, Fig3B$bl_upper), 
+                sprintf("(%.2f, %.2f)", Fig3B$mrs_lower, Fig3B$mrs_upper),
+                sprintf("(%.2f, %.2f)", Fig3B$ss_lower, Fig3B$ss_upper),
+                sprintf("(%.2f, %.2f)", Fig3B$ws_lower, Fig3B$ws_upper),
                 sep = "\n")
 Fig3B$Beta <- paste(sprintf("%.2f", Fig3B$bl_coef),
                 sprintf("%.2f", Fig3B$mrs_coef),
                 sprintf("%.2f", Fig3B$ss_coef),
                 sprintf("%.2f", Fig3B$ws_coef),
                 sep = "\n")
-Fig3B$q.val <- paste(sprintf("%.2f", Fig3B$bl_fdr),
-                sprintf("%.2f", Fig3B$mrs_fdr),
-                sprintf("%.2f", Fig3B$ss_fdr),
-                sprintf("%.2f", Fig3B$ws_fdr),
-                sep = "\n")
-Fig3B$p.val <- paste(sprintf("%.2f", Fig3B$bl_p.val),
-                sprintf("%.2f", Fig3B$mrs_p.val),
-                sprintf("%.2f", Fig3B$ss_p.val),
-                sprintf("%.2f", Fig3B$ws_p.val),
-                sep = "\n")
+Fig3B$q.val <- paste(Fig3B$bl_fdr, Fig3B$mrs_fdr, Fig3B$ss_fdr, Fig3B$ws_fdr,sep = "\n")
+Fig3B$p.val <- paste(Fig3B$bl_p.val, Fig3B$mrs_p.val, Fig3B$ss_p.val, Fig3B$ws_p.val, sep = "\n")
+
 Fig3B$CI[grepl("NA", Fig3B$CI)] <- "" # Any NA to blank
 Fig3B$Beta[grepl("NA", Fig3B$Beta)] <- "" # Any NA to blank
 Fig3B$q.val[grepl("NA", Fig3B$q.val)] <- "" # Any NA to blank
@@ -301,7 +288,7 @@ tm <- forest_theme(base_size = 8,
                    ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
                    footnote_gp = gpar(col = "blue"),
                    legend_name = "CRP Type",
-                   legend_value = c("Blood CRP", "MRS CRP", "PRS ssum",  "PRS wsum" ),
+                   legend_value = c("Blood CRP", "MRS CRP", "PRS EUR",  "PRS wsum" ),
                    vertline_lty = c("dashed", "dotted"),
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3
@@ -361,10 +348,14 @@ Fig3C$bl_coef <- round(Fig3C$bl_coef,3)
 Fig3C$mrs_coef <- round(Fig3C$mrs_coef,3)
 Fig3C$ss_coef <- round(Fig3C$ss_coef,3)
 Fig3C$ws_coef <- round(Fig3C$ws_coef,3)
-Fig3C$bl_p.val <- round(Fig3C$bl_p.val,3)
-Fig3C$mrs_p.val <- round(Fig3C$mrs_p.val,3)
-Fig3C$ss_p.val <- round(Fig3C$ss_p.val,3)
-Fig3C$ws_p.val <- round(Fig3C$ws_p.val,3)
+Fig3C$bl_fdr <- format(Fig3C$bl_fdr, scientific=TRUE, digit=2)
+Fig3C$mrs_fdr <- format(Fig3C$mrs_fdr, scientific=TRUE, digit=2)
+Fig3C$ss_fdr <- format(Fig3C$ss_fdr, scientific=TRUE, digit=2)
+Fig3C$ws_fdr <- format(Fig3C$ws_fdr, scientific=TRUE, digit=2)
+Fig3C$bl_p.val <- format(Fig3C$bl_p.val, scientific=TRUE, digit=2)
+Fig3C$mrs_p.val <- format(Fig3C$mrs_p.val, scientific=TRUE, digit=2)
+Fig3C$ss_p.val <- format(Fig3C$ss_p.val, scientific=TRUE, digit=2)
+Fig3C$ws_p.val <- format(Fig3C$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
 Fig3C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -388,20 +379,14 @@ Fig3C$Beta <- paste(sprintf("%.2f", Fig3C$bl_coef),
                 sprintf("%.2f", Fig3C$ss_coef),
                 sprintf("%.2f", Fig3C$ws_coef),
                 sep = "\n")
-Fig3C$q.val <- paste(sprintf("%.2f", Fig3C$bl_fdr),
-                sprintf("%.2f", Fig3C$mrs_fdr),
-                sprintf("%.2f", Fig3C$ss_fdr),
-                sprintf("%.2f", Fig3C$ws_fdr),
-                sep = "\n")
-Fig3C$p.val <- paste(sprintf("%.3f", Fig3C$bl_p.val),
-                sprintf("%.2f", Fig3C$mrs_p.val),
-                sprintf("%.3f", Fig3C$ss_p.val),
-                sprintf("%.2f", Fig3C$ws_p.val),
-                sep = "\n")
+Fig3C$q.val <- paste(Fig3C$bl_fdr, Fig3C$mrs_fdr, Fig3C$ss_fdr, Fig3C$ws_fdr,sep = "\n")
+Fig3C$p.val <- paste(Fig3C$bl_p.val, Fig3C$mrs_p.val, Fig3C$ss_p.val, Fig3C$ws_p.val, sep = "\n")
+
 Fig3C$CI[grepl("NA", Fig3C$CI)] <- "" # Any NA to blank
 Fig3C$Beta[grepl("NA", Fig3C$Beta)] <- "" # Any NA to blank
 Fig3C$q.val[grepl("NA", Fig3C$q.val)]<- ""
 Fig3C$p.val[grepl("NA", Fig3C$p.val)]<- ""
+names(Fig3C)[24] <- 'Odds Ratio'
 
 #################### plot
 # Set-up theme
@@ -411,7 +396,7 @@ tm <- forest_theme(base_size = 8,
                    ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
                    footnote_gp = gpar(col = "blue"),
                    legend_name = "CRP Type",
-                   legend_value = c("Blood CRP", "MRS CRP", "PRS ssum",  "PRS wsum" ),
+                   legend_value = c("Blood CRP", "MRS CRP", "PRS EUR",  "PRS wsum" ),
                    vertline_lty = c("dashed", "dotted"),
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3

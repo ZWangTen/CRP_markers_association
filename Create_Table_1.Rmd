@@ -16,6 +16,10 @@ library(knitr)
 
 ```{r,warning=FALSE}
 pheno_SOL <- read_csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240312_pheSol.csv')
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+names(ev5)[2]<-'SOL_ID'
+names(ev5)[2]<-'SOL_ID'
+pheno_SOL <- merge(pheno_SOL, ev5[,c(2,5:9)],by='SOL_ID')
 ```
 
 # Create Table 1
@@ -123,6 +127,6 @@ Tab.1[is.na(Tab.1)] <- ''
 Tab.1 <- cbind(Tab.1[,1], do.call(cbind,lapply(Tab.1[2:5], function(x) {gsub(' to', ',',x)})))
 names(Tab.1)[1] <- '' 
 
-write.csv(Tab.1, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table1.csv', row.names = FALSE)
+#write.csv(Tab.1, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table1.csv', row.names = FALSE)
 ```
 
