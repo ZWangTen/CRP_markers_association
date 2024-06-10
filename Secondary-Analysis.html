@@ -894,7 +894,255 @@ tab$p[9] &lt;- summary(mod)$coefficients[2,4]
 tab$lower[9] &lt;- confint(mod)[2,1]
 tab$upper[9] &lt;- confint(mod)[2,2]
 
+tab$s.size &lt;- 1
+tab$s.size[c(1,4,7)] &lt;- table(sdata$oe)[1] + table(sdata$oe)[2]
+tab$s.size[c(2,5,8)] &lt;- table(sdata$oe)[1] + table(sdata$oe)[3]
+tab$s.size[c(3,6,9)] &lt;- table(sdata$OSA)[1] + table(sdata$OSA)[2]
 #write.csv(tab,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240524_MNR_OE.csv&#39;,row.names = F)</code></pre>
+</div>
+</div>
+<div id="blood--and-prs-crp-association-analysis-using-all-hchssol-samples" class="section level2">
+<h2>Blood- and PRS-CRP association analysis using all HCHS/SOL
+samples</h2>
+<div id="data-preparation-3" class="section level3">
+<h3>Data preparation</h3>
+<pre class="r"><code>phen &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Datasets/metsleep_covariates_20200129.csv&quot;)
+crp&lt;-read.csv(&#39;/Volumes/Sofer Lab/HCHS_SOL/Datasets/ms0725_covariates_20190129.csv&#39;)
+phen &lt;- merge(phen, crp[,c(1,88)],by=&#39;ID&#39;)
+phen$cDur&lt;-ifelse(phen$SLPDUR&gt;9,&#39;Long&#39;,ifelse(phen$SLPDUR&lt;6,&#39;Short&#39;,&#39;Norm&#39;))
+phen$lgCrp &lt;- log(as.numeric(phen$LABA91))</code></pre>
+<pre><code>## Warning: NAs introduced by coercion</code></pre>
+<pre class="r"><code>ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
+p_link &lt;- read_sas(&#39;/Volumes/Sofer Lab/HCHS_SOL/Datasets/hchs_dbgap_id_mapping_200727.sas7bdat&#39;)
+colnames(p_link)[1] &lt;- &#39;ID_old&#39;
+p_link$ID &lt;-str_remove(p_link$ID_old, &quot;^0+&quot;)
+names(p_link)[2]&lt;-&#39;SOL_ID&#39;
+phen&lt;-merge(phen,p_link[,2:3],by=&#39;ID&#39;)
+names(ev5)[2] &lt;- &#39;SOL_ID&#39;
+phen &lt;- merge(phen, ev5[,c(2,5:9)], by=&#39;SOL_ID&#39;, all=T) # 12691 people with genetic data
+phen &lt;- phen[-which(phen$BKGRD1_C7%in%c(&#39;Q&#39;,&#39;&#39;)),]
+phen$BKGRD1_C7 &lt;- factor(phen$BKGRD1_C7,levels = c(&quot;0&quot;,&quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;, &quot;5&quot;,&quot;6&quot;),
+                          labels = c(&quot;Domician&quot;,&quot;Central American&quot;,&quot;Cuban&quot;,&quot;Mexican&quot;,
+                                     &quot;Puerto Rican&quot;,&quot;South American&quot;,&quot;More than one/Other heritage&quot;))
+phen$CENTER &lt;- factor(phen$CENTER,levels = c(&quot;B&quot;,&quot;C&quot;,&quot;M&quot;,&quot;S&quot;),labels=c(&quot;Bronx&quot;,&quot;Chicago&quot;, &quot;Miami&quot;, &quot;San Diego&quot;))
+phen$GENDER &lt;- factor(phen$GENDER,levels = c(&quot;F&quot;,&quot;M&quot;),labels=c(&quot;Female&quot;,&quot;Male&quot;))
+phen$DIABETES2_INDICATOR &lt;- factor(as.character(phen$DIABETES2_INDICATOR),levels = c(&quot;1&quot;,&quot;0&quot;),labels=c(&quot;Diabetes&quot;,&quot;Normal&quot;))
+phen$HYPERTENSION &lt;- factor(as.character(phen$HYPERTENSION),levels = c(&quot;1&quot;,&quot;0&quot;),labels=c(&quot;Hypertension&quot;,&quot;Normal&quot;))
+
+cog&lt;-read.csv(&#39;/Volumes/Sofer Lab/HCHS_SOL/Datasets/20240205_global_cog_base_and_inca.csv&#39;)
+phen &lt;- merge(phen, cog[,c(2,3,5)], by=&#39;ID&#39;)
+#write.csv(phen,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240604_phen_all.csv&#39;,row.names = F)
+
+sdata &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240604_phen_all.csv&#39;)
+sdata$DIABETES2_INDICATOR &lt;-relevel(as.factor(sdata$DIABETES2_INDICATOR), ref = &#39;Normal&#39; )
+sdata$HYPERTENSION &lt;-relevel(as.factor(sdata$HYPERTENSION), ref = &#39;Normal&#39; )
+long &lt;- subset(sdata, cDur%in%c(&#39;Long&#39;,&#39;Norm&#39;))
+long$cDur &lt;- relevel(as.factor(long$cDur), ref = &#39;Norm&#39;)
+short &lt;- subset(sdata, cDur%in%c(&#39;Short&#39;,&#39;Norm&#39;))
+short$cDur &lt;- relevel(as.factor(short$cDur), ref = &#39;Norm&#39;)
+
+survey_obj &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=sdata)
+survey_obj &lt;- subset(survey_obj,  !is.na(lgCrp))
+survey_long &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long &lt;- subset(survey_long,  !is.na(lgCrp))
+survey_short &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=short)
+survey_short &lt;- subset(survey_short,  !is.na(lgCrp))</code></pre>
+</div>
+<div id="blood-crp-association" class="section level3">
+<h3>Blood CRP association</h3>
+<pre class="r"><code>tab &lt;- data.frame(pheno=c(&#39;SLPA54&#39;, &#39;SLPA91&#39;, &#39;SLPA92&#39;, &#39;SLPA97&#39;, &#39;SLPDUR&#39;, &#39;WHIIRS&#39;,
+                          &#39;global_cog_score&#39;, &#39;global_cog_score_change&#39;, &#39;ESS&#39;,
+                          &#39;DIABETES2_INDICATOR&#39;, &#39;HYPERTENSION&#39;, &#39;LongSlp&#39;, &#39;ShortSlp&#39;),
+                  coef=rep(1,13), p.val=rep(1,13), lower=rep(1,13), upper=rep(1,13))
+
+for (i in 1:13){
+  if (i&lt;10){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7&#39;))) 
+    mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 10:11){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7&#39;)))
+    mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 12:13) {
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7&#39;)))
+    if (i==12){
+    mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
+    } else {
+      mod &lt;- svyglm(form, design = survey_short, family = quasibinomial(link = &quot;logit&quot;))
+    }
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+}
+crp &lt;- tab %&gt;% mutate(group=&#39;Blood_CRP&#39;) # max sample size 16331
+crp$s.size &lt;- 1
+dt &lt;- sdata[complete.cases(sdata$lgCrp),]
+crp$s.size[1] &lt;- nrow(dt[complete.cases(dt$SLPA54),])
+crp$s.size[2:4] &lt;- nrow(dt[complete.cases(dt$SLPA91),])
+crp$s.size[5] &lt;- nrow(dt[complete.cases(dt$SLPDUR),])
+crp$s.size[6] &lt;- nrow(dt[complete.cases(dt$WHIIRS),])
+crp$s.size[7] &lt;- nrow(dt[complete.cases(dt$global_cog_score),])
+crp$s.size[8] &lt;- nrow(dt[complete.cases(dt$global_cog_score_change),])
+crp$s.size[9] &lt;- nrow(dt[complete.cases(dt$ESS),])
+crp$s.size[10:11] &lt;- nrow(dt[complete.cases(dt$DIABETES2_INDICATOR),])
+crp$s.size[12] &lt;- nrow(long[complete.cases(long$lgCrp),])
+crp$s.size[13] &lt;- nrow(short[complete.cases(short$lgCrp),])
+
+#write.csv(crp,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_lgCRP_all.csv&#39;,row.names = F)</code></pre>
+</div>
+<div id="prs-crp-association" class="section level3">
+<h3>PRS CRP association</h3>
+<pre class="r"><code>scsx &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240523_SOL_PRS_CSx.csv&#39;)
+
+# Prepare survey objects
+pdata &lt;- merge(sdata, scsx[,c(1, 10, 12, 13)], by=&#39;SOL_ID&#39;) # 12320 samples
+long &lt;- subset(pdata, cDur%in%c(&#39;Long&#39;,&#39;Norm&#39;))
+long$cDur &lt;- relevel(as.factor(long$cDur), ref = &#39;Norm&#39;)
+short &lt;- subset(pdata, cDur%in%c(&#39;Short&#39;,&#39;Norm&#39;))
+short$cDur &lt;- relevel(as.factor(short$cDur), ref = &#39;Norm&#39;)
+
+tab &lt;- data.frame(pheno=c(&#39;lgCrp&#39;, &#39;SLPA54&#39;, &#39;SLPA91&#39;, &#39;SLPA92&#39;, &#39;SLPA97&#39;, &#39;SLPDUR&#39;, &#39;WHIIRS&#39;,
+                          &#39;global_cog_score&#39;, &#39;global_cog_score_change&#39;, &#39;ESS&#39;,
+                          &#39;DIABETES2_INDICATOR&#39;, &#39;HYPERTENSION&#39;, &#39;LongSlp&#39;, &#39;ShortSlp&#39;),
+                  coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
+
+survey_obj &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pdata)
+survey_obj &lt;- subset(survey_obj,  !is.na(lgCrp))
+survey_long &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long &lt;- subset(survey_long,  !is.na(lgCrp))
+survey_short &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=short)
+survey_short &lt;- subset(survey_short,  !is.na(lgCrp))
+
+# Run the analysis
+for (i in 1:14){
+  if (i&lt;11){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ PRS_EUR_std + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 11:12){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ PRS_EUR_std + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ PRS_EUR_std + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    if (i==13){
+    mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
+    } else {
+      mod &lt;- svyglm(form, design = survey_short, family = quasibinomial(link = &quot;logit&quot;))
+    }
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+}
+eur &lt;- tab %&gt;% mutate(group=&#39;PRS_EUR&#39;)
+
+for (i in 1:14){
+  if (i&lt;11){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) 
+    mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 11:12){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    if (i==13){
+    mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
+    } else {
+      mod &lt;- svyglm(form, design = survey_short, family = quasibinomial(link = &quot;logit&quot;))
+    }
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+}
+
+# Combine results
+wsum.all &lt;- tab %&gt;% mutate(group=&#39;PRS_wsum_all&#39;)
+
+for (i in 1:14){
+  if (i&lt;11){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ wsum_hisp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 11:12){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ wsum_hisp + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ wsum_hisp + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    if (i==13){
+      mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
+    } else {
+      mod &lt;- svyglm(form, design = survey_short, family = quasibinomial(link = &quot;logit&quot;))
+    }
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+}
+
+# Combine results
+wsum.hisp &lt;- tab %&gt;% mutate(group=&#39;PRS_wsum_hisp&#39;)
+res &lt;- rbind(eur, wsum.all, wsum.hisp)
+res$s.size &lt;- 1
+dt &lt;- sdata[complete.cases(sdata$lgCrp),]
+dt &lt;- dt[complete.cases(dt$EV1),]
+res &lt;- res[order(res$pheno),]
+row.names(res) &lt;- 1:nrow(res)
+res$s.size[c(1:3,13:15,16:18)] &lt;- nrow(dt)
+res$s.size[4:6] &lt;- nrow(dt[complete.cases(dt$ESS),])
+res$s.size[7:9] &lt;- nrow(dt[complete.cases(dt$global_cog_score),])
+res$s.size[10:12] &lt;- nrow(dt[complete.cases(dt$global_cog_score_change),])
+l2&lt;- long[complete.cases(long$EV1),]
+res$s.size[19:21] &lt;- nrow(l2[complete.cases(l2$lgCrp),])
+s2&lt;- short[complete.cases(short$EV1),]
+res$s.size[22:24] &lt;- nrow(s2[complete.cases(s2$lgCrp),])
+res$s.size[25:27] &lt;- nrow(dt[complete.cases(dt$SLPA54),])
+res$s.size[28:36] &lt;- nrow(dt[complete.cases(dt$SLPA91),])
+res$s.size[37:39] &lt;- nrow(dt[complete.cases(dt$SLPDUR),])
+res$s.size[40:42] &lt;- nrow(dt[complete.cases(dt$WHIIRS),])
+#write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_PRS_all.csv&#39;,row.names = F)</code></pre>
 </div>
 </div>
 </div>

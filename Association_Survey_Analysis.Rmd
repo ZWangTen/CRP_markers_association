@@ -127,8 +127,9 @@ res <- rbind(mrs, crp)
 # Create PRS_CRP as simple and weighted sum for HCHS/SOL
 mcoef <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S4.csv')
 scsx <- read.delim('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/CRP_PRS/constructed_PRSs/HCHS/20240119_CRP_HCHS_std_PRS_CSx_PRSs.txt')
-scsx$wsum_all <- scale(scsx$PRS_AFR_std * mcoef$Estimate[2] + scsx$PRS_EUR_std * mcoef$Estimate[3] +
-                         scsx$PRS_AMR_std * mcoef$Estimate[4])
+scsx$wsum_all <- scale(scsx$PRS_AFR_std * mcoef$Estimate[1] + scsx$PRS_EUR_std * mcoef$Estimate[2] +
+                         scsx$PRS_AMR_std * mcoef$Estimate[3]+ scsx$PRS_EAS_std * mcoef$Estimate[4] +
+                         scsx$PRS_SAS_std * mcoef$Estimate[5])
 scsx$wsum_hisp <- scale(scsx$PRS_AFR_std * mcoef$Estimate[6] + scsx$PRS_EUR_std * mcoef$Estimate[7] +
                          scsx$PRS_AMR_std * mcoef$Estimate[8] + scsx$PRS_EAS_std * mcoef$Estimate[9] +
                          scsx$PRS_SAS_std * mcoef$Estimate[10])
@@ -264,12 +265,13 @@ res <- rbind(eur, wsum.all, wsum.hisp)
 
 ## MRS - model 2
 ```{r}
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92',
-                          'DIABETES2_INDICATOR','HYPERTENSION','LongSlp'),
-                  coef=rep(1,6), p.val=rep(1,6),lower=rep(1,6),upper=rep(1,6))
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
+                          'global_cog_score', 'global_cog_score_change', 'ESS',
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
+                  coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
 
-for (i in 1:6){
-  if (i<4){
+for (i in 1:14){
+  if (i<11){
     form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5'))) 
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -277,8 +279,8 @@ for (i in 1:6){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 4:5){
-    if (i==4){
+  if (i %in% 11:12){
+    if (i==11){
       form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
     } else {
       form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + EV1 + EV2 + EV3 + EV4 + EV5')))
@@ -289,9 +291,13 @@ for (i in 1:6){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i==6){
+  if (i %in% 13:14){
     form <- as.formula(paste0('cDur', paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
+    if (i==13){
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -303,21 +309,39 @@ mrs <- tab %>% mutate(group='MRS_CRP')
 
 ## CRP - model 2
 ```{r}
-tab <- data.frame(pheno=c('DIABETES2_INDICATOR','LongSlp'),
-                  coef=rep(1,2), p.val=rep(1,2),lower=rep(1,2),upper=rep(1,2))
+tab <- data.frame(pheno=c('SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
+                          'global_cog_score', 'global_cog_score_change', 'ESS',
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
+                  coef=rep(1,13), p.val=rep(1,13), lower=rep(1,13), upper=rep(1,13))
 
-for (i in 1:2){
-    if (i==1){
-      form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + HYPERTENSION')))
+for (i in 1:13){
+  if (i<10){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION')))
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 10:11){
+    if (i==10){
+      form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
+    } else {
+      form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + EV1 + EV2 + EV3 + EV4 + EV5')))
+    }
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i==2){
+  if (i %in% 12:13) {
     form <- as.formula(paste0('cDur', paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION')))
+    if (i==12){
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]

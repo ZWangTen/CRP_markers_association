@@ -151,54 +151,47 @@ grid.arrange(tab,mid,ncol=2)
 
 ``` r
 rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
-m1.num <- subset(rmrs1, pheno%in%c('SLPA54','SLPA91','SLPA92') & group%in%'MRS_CRP')
-m1.cat <- subset(rmrs1, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
-           & group%in%'MRS_CRP')
-m1.crp <- subset(rmrs1, pheno%in%c('LongSlp') & group%in%'Blood_CRP')
-m1.num$mod<-'1'
-m1.cat$mod<-'1'
-m1.crp$mod<-'1'
-
+rmrs1 <- rmrs1[1:14,]
+rmrs1$fdr <- p.adjust(rmrs1$p.val,method='fdr')
+rmrs1$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs1$group <- 'Model 1'
 rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240514_MRSCRP_mod2.csv')
-m2.num <- subset(rmrs2, pheno%in%c('SLPA54','SLPA91','SLPA92') & group%in%'MRS_CRP')
-m2.cat <- subset(rmrs2, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
-           & group%in%'MRS_CRP')
-m2.crp <- subset(rmrs2, pheno%in%c('LongSlp')  & group%in%'Blood_CRP')
-m2.num$mod <- '2'
-m2.cat$mod <- '2'
-m2.crp$mod <- '2'
+rmrs2 <- rmrs2[1:14,]
+rmrs2$fdr <- p.adjust(rmrs2$p.val,method='fdr')
+rmrs2$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs2$group <- 'Model 2'
 
-FigS2A <- rbind(m1.num, m2.num)
-FigS2B <- rbind(m1.cat, m2.cat)
-FigS2C <- rbind(m1.crp, m2.crp)
-
-FigS2B$coef<-exp(FigS2B$coef)
-FigS2B$lower<-exp(FigS2B$lower)
-FigS2B$upper<-exp(FigS2B$upper)
-FigS2C$coef<-exp(FigS2C$coef)
-FigS2C$lower<-exp(FigS2C$lower)
-FigS2C$upper<-exp(FigS2C$upper)
+pl <- rbind(rmrs1,rmrs2)
+pl <- pl[order(pl$pheno),]
+row.names(pl) <- 1:nrow(pl)
+FigS2A <- pl[c(17:24),]
+FigS2B <- pl[c(1:4, 7:8, 11:12, 25:28),]
+FigS2C <- pl[c(5:6, 9:10, 13:16),]
+FigS2C$coef <- exp(FigS2C$coef)
+FigS2C$lower <- exp(FigS2C$lower)
+FigS2C$upper <- exp(FigS2C$upper)
 ```
 
 ## Fig S2A
 
 ``` r
 row.names(FigS2A) <- 1:nrow(FigS2A)
-sub <- split(FigS2A, FigS2A$mod) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
+sub <- split(FigS2A, FigS2A$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
 names(m1)<-paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group,mod)) 
+m2 <- sub[[2]]%>% dplyr::select(-c(group)) 
 names(m2) <- paste0('m2_',names(m2))
 
 FigS2A <- cbind(m1, m2) %>% dplyr::select(-c(m2_pheno))
 names(FigS2A)[1] <- 'Phenotype'
 
-FigS2A <- rbind(FigS2A,data.frame(Phenotype=c('MRS-CRP: Model 1 vs Model 2'),
-                           m1_coef=rep(NA,1), m1_p.val=rep(NA,1), m1_lower=rep(NA,1), m1_upper=rep(NA,1),
+FigS2A <- rbind(FigS2A,data.frame(Phenotype=c('Obstructive Sleep Apnea'),
+                           m1_coef=rep(NA,1), m1_p.val=rep(NA,1), m1_lower=rep(NA,1), 
+                           m1_upper=rep(NA,1), m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
                            m2_coef=rep(NA,1), m2_p.val=rep(NA,1), m2_lower=rep(NA,1), m2_upper=rep(NA,1)))
-FigS2A <- FigS2A[c(4,1:3),]
+FigS2A <- FigS2A[c(5,1:4),]
 row.names(FigS2A) <- 1:nrow(FigS2A)
-FigS2A$Phenotype[c(2:4)] <- c('AHI','Minimum SpO2','Mean SpO2')
+FigS2A$Phenotype[c(2:5)] <- c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
 FigS2A$Phenotype <- ifelse(is.na(FigS2A$m1_coef), 
                       FigS2A$Phenotype,
                       paste0("   ", FigS2A$Phenotype))
@@ -207,6 +200,8 @@ FigS2A$m1_coef<-round(FigS2A$m1_coef,3)
 FigS2A$m2_coef<-round(FigS2A$m2_coef,3)
 FigS2A$m1_p.val<-format(FigS2A$m1_p.val, scientific=TRUE, digits=2)
 FigS2A$m2_p.val<-format(FigS2A$m2_p.val, scientific=TRUE, digits=2)
+FigS2A$m1_fdr <- format(FigS2A$m1_fdr, scientific=TRUE, digit=2)
+FigS2A$m2_fdr <- format(FigS2A$m2_fdr, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
 FigS2A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -224,9 +219,12 @@ FigS2A$Beta <- paste(sprintf("%.2f", FigS2A$m1_coef),
                 sep = "\n")
 FigS2A$p.val <- paste(FigS2A$m1_p.val, FigS2A$m2_p.val,
                 sep = "\n")
+FigS2A$q.val <- paste(FigS2A$m1_fdr, FigS2A$m2_fdr, sep = "\n")
+
 FigS2A$CI[grepl("NA", FigS2A$CI)] <- "" # Any NA to blank
 FigS2A$Beta[grepl("NA", FigS2A$Beta)] <- "" # Any NA to blank
 FigS2A$p.val[grepl("NA", FigS2A$p.val)] <- "" # Any NA to blank
+FigS2A$q.val[grepl("NA", FigS2A$q.val)] <- "" # Any NA to blank
 
 #################### plot
 # Set-up theme
@@ -242,15 +240,15 @@ tm <- forest_theme(base_size = 8,
                    # Table cell padding, width 4 and heights 3
                    )
 #> refline_lty will be deprecated, use refline_gp instead.
-names(FigS2A)[11]<-'95%CI'
-plot <- forest(FigS2A[,c(1,12,13,11,10)], 
+names(FigS2A)[13]<-'95%CI'
+plot <- forest(FigS2A[,c(1,14,15,16,13,12)], 
             est = list(FigS2A$m1_coef,
                        FigS2A$m2_coef),
             lower = list(FigS2A$m1_lower,
                          FigS2A$m2_lower),
             upper = list(FigS2A$m1_upper,
                          FigS2A$m2_upper),
-            ci_column = 5,
+            ci_column = 6,
             ref_line = 0, 
             theme = tm)
 plot
@@ -262,20 +260,21 @@ plot
 
 ``` r
 row.names(FigS2B) <- 1:nrow(FigS2B)
-sub <- split(FigS2B, FigS2B$mod) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
+sub <- split(FigS2B, FigS2B$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
 names(m1) <- paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group,mod))
+m2 <- sub[[2]]%>% dplyr::select(-c(group))
 names(m2) <- paste0('m2_', names(m2))
 FigS2B <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
 names(FigS2B)[1] <- 'Phenotype'
 
-FigS2B <- rbind(FigS2B, data.frame(Phenotype=c('MRS-CRP: Model 1 vs Model 2'),
-                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),m1_upper=rep(NA,1),
-                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
-FigS2B <- FigS2B[c(4,1:3),]
+FigS2B <- rbind(FigS2B, data.frame(Phenotype=c('Cognitive Function','Other phenotypes'),
+                           m1_coef=rep(NA,2),m1_p.val=rep(NA,2), m1_lower=rep(NA,2),
+                           m1_upper=rep(NA,2), m1_fdr=rep(NA,2), m2_fdr=rep(NA,2),
+                           m2_coef=rep(NA,2), m2_p.val=rep(NA,2),m2_lower=rep(NA,2),m2_upper=rep(NA,2) ))
+FigS2B <- FigS2B[c(7,1:2, 8,3:6),]
 row.names(FigS2B) <- 1:nrow(FigS2B)
-FigS2B$Phenotype[c(2,3,4)] <- c('Diabetes', 'Hypertension', 'Long Sleep')
+FigS2B$Phenotype[c(2,3,7)] <- c('Change', 'Baseline', 'Sleep Duration')
 FigS2B$Phenotype <- ifelse(is.na(FigS2B$m1_coef), 
                       FigS2B$Phenotype,
                       paste0("   ", FigS2B$Phenotype))
@@ -283,7 +282,9 @@ FigS2B$Phenotype <- ifelse(is.na(FigS2B$m1_coef),
 FigS2B$m1_coef<-round(FigS2B$m1_coef,3)
 FigS2B$m2_coef<-round(FigS2B$m2_coef,3)
 FigS2B$m1_p.val<-format(FigS2B$m1_p.val, scientific=TRUE, digits=2)
-FigS2B$m2_p.val<-format(FigS2B$m1_p.val, scientific=TRUE, digits=2)
+FigS2B$m2_p.val<-format(FigS2B$m2_p.val, scientific=TRUE, digits=2)
+FigS2B$m1_fdr <- format(FigS2B$m1_fdr, scientific=TRUE, digit=2)
+FigS2B$m2_fdr <- format(FigS2B$m2_fdr, scientific=TRUE, digit=2)
 
 # Add two m1ank columns for CI
 FigS2B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -301,23 +302,24 @@ FigS2B$Beta <- paste(sprintf("%.2f", FigS2B$m1_coef),
                 sep = "\n")
 FigS2B$p.val <- paste( FigS2B$m1_p.val, FigS2B$m2_p.val,
                 sep = "\n")
+FigS2B$q.val <- paste(FigS2B$m1_fdr, FigS2B$m2_fdr, sep = "\n")
 
 FigS2B$CI[grepl("NA", FigS2B$CI)] <- "" # Any NA to blank
 FigS2B$Beta[grepl("NA", FigS2B$Beta)] <- "" # Any NA to blank
 FigS2B$p.val[grepl("NA", FigS2B$p.val)]<- ""
+FigS2B$q.val[grepl("NA", FigS2B$q.val)] <- "" # Any NA to blank
 
 #################### plot
-names(FigS2B)[11] <- '95%CI'
-names(FigS2B)[12] <- 'Odds Ratio'
-plot <- forest(FigS2B[,c(1,12,13,11,10)], 
+names(FigS2B)[13] <- '95%CI'
+plot <- forest(FigS2B[,c(1,14,15,16,13,12)], 
             est = list(FigS2B$m1_coef,
                        FigS2B$m2_coef),
             lower = list(FigS2B$m1_lower,
                          FigS2B$m2_lower),
             upper = list(FigS2B$m1_upper,
                          FigS2B$m2_upper),
-            ci_column = 5,
-            ref_line = 1, 
+            ci_column = 6,
+            ref_line = 0, 
             theme = tm)
 plot
 ```
@@ -328,20 +330,21 @@ plot
 
 ``` r
 row.names(FigS2C) <- 1:nrow(FigS2C)
-sub <- split(FigS2C, FigS2C$mod) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group,mod))
+sub <- split(FigS2C, FigS2C$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
 names(m1) <- paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group,mod))
+m2 <- sub[[2]]%>% dplyr::select(-c(group))
 names(m2) <- paste0('m2_', names(m2))
 FigS2C <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
 names(FigS2C)[1] <- 'Phenotype'
 
-FigS2C <- rbind(FigS2C, data.frame(Phenotype=c('Blood-CRP: Model 1 vs Model 2'),
-                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),m1_upper=rep(NA,1),
+FigS2C <- rbind(FigS2C, data.frame(Phenotype=c('Other phenotypes'),
+                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),
+                           m1_upper=rep(NA,1),m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
                            m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
-FigS2C <- FigS2C[c(2,1),]
+FigS2C <- FigS2C[c(5,1:4),]
 row.names(FigS2C) <- 1:nrow(FigS2C)
-FigS2C$Phenotype[c(2)] <- c('Long Sleep')
+FigS2C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
 FigS2C$Phenotype <- ifelse(is.na(FigS2C$m1_coef), 
                       FigS2C$Phenotype,
                       paste0("   ", FigS2C$Phenotype))
@@ -349,7 +352,9 @@ FigS2C$Phenotype <- ifelse(is.na(FigS2C$m1_coef),
 FigS2C$m1_coef<-round(FigS2C$m1_coef,3)
 FigS2C$m2_coef<-round(FigS2C$m2_coef,3)
 FigS2C$m1_p.val<-format(FigS2C$m1_p.val, scientific=TRUE, digits=2)
-FigS2C$m2_p.val<-format(FigS2C$m1_p.val, scientific=TRUE, digits=2)
+FigS2C$m2_p.val<-format(FigS2C$m2_p.val, scientific=TRUE, digits=2)
+FigS2C$m1_fdr <- format(FigS2C$m1_fdr, scientific=TRUE, digit=2)
+FigS2C$m2_fdr <- format(FigS2C$m2_fdr, scientific=TRUE, digit=2)
 
 # Add two m1ank columns for CI
 FigS2C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
@@ -367,22 +372,24 @@ FigS2C$Beta <- paste(sprintf("%.2f", FigS2C$m1_coef),
                 sep = "\n")
 FigS2C$p.val <- paste(FigS2C$m1_p.val, FigS2C$m2_p.val,
                 sep = "\n")
+FigS2C$q.val <- paste(FigS2C$m1_fdr, FigS2C$m2_fdr, sep = "\n")
 
 FigS2C$CI[grepl("NA", FigS2C$CI)] <- "" # Any NA to blank
 FigS2C$Beta[grepl("NA", FigS2C$Beta)] <- "" # Any NA to blank
 FigS2C$p.val[grepl("NA", FigS2C$p.val)]<- ""
+FigS2C$q.val[grepl("NA", FigS2C$q.val)]<- ""
 
 #################### plot
-names(FigS2C)[11] <- '95%CI'
-names(FigS2C)[12] <- 'Odds Ratio'
-plot <- forest(FigS2C[,c(1,12,13,11,10)], 
+names(FigS2C)[13] <- '95%CI'
+names(FigS2C)[14] <- 'Odds Ratio'
+plot <- forest(FigS2C[,c(1,14,15,16,13,12)], 
             est = list(FigS2C$m1_coef,
                        FigS2C$m2_coef),
             lower = list(FigS2C$m1_lower,
                          FigS2C$m2_lower),
             upper = list(FigS2C$m1_upper,
                          FigS2C$m2_upper),
-            ci_column = 5,
+            ci_column = 6,
             ref_line = 1, 
             theme = tm)
 plot
@@ -780,6 +787,355 @@ plot
 
 ![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
+# Create Figure S5
+
+## Read Data
+
+``` r
+rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_lgCRP_all.csv')
+rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_PRS_all.csv')
+rprs <- rprs[order(rprs$group),]
+row.names(rprs) <- 1:nrow(rprs)
+rmrs$fdr <- 1
+rmrs$fdr <- p.adjust(rmrs$p.val,method='fdr')
+rmrs$pheno[c(7:8)] <- c('cog_global', 'cog_change')
+
+rprs$fdr <- 1
+rprs$fdr[1:14] <- p.adjust(rprs[1:14,]$p.val,method='fdr')
+rprs$fdr[15:28] <- p.adjust(rprs[15:28,]$p.val,method='fdr')
+rprs$fdr[29:42] <- p.adjust(rprs[29:42,]$p.val,method='fdr')
+rprs$pheno[c(3:4,17:18,31:32)] <- rep(c('cog_global', 'cog_change'), 3)
+
+pl <- rbind(rmrs,rprs)
+pl <- pl[order(pl$pheno),]
+row.names(pl) <- 1:nrow(pl)
+FigS5A <- pl[c(32:47),]
+FigS5B <- pl[c(1:8, 13:16, 48:55),]
+FigS5C <- pl[c(9:12, 17:20, 24:31),]
+FigS5C$coef <- exp(FigS5C$coef)
+FigS5C$lower <- exp(FigS5C$lower)
+FigS5C$upper <- exp(FigS5C$upper)
+```
+
+## Fig S5A
+
+``` r
+row.names(FigS5A) <- 1:nrow(FigS5A)
+sub <- split(FigS5A, FigS5A$group) 
+bl <- sub[[1]] %>% dplyr::select(-c(group))
+names(bl) <- paste0('bl_', names(bl))
+mrs <- sub[[2]] %>% dplyr::select(-c(group)) 
+names(mrs) <- paste0('mrs_', names(mrs))
+ss <- sub[[3]]%>% dplyr::select(-c(group)) 
+names(ss) <- paste0('ss_', names(ss))
+ws <- sub[[4]] %>% dplyr::select(-c(group))
+names(ws) <- paste0('ws_', names(ws))
+FigS5A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS5A)[1] <- 'Phenotype'
+
+FigS5A <- rbind(FigS5A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
+                              bl_coef=rep(NA,1), bl_p.val=rep(NA,1), bl_lower=rep(NA,1),
+                              bl_upper=rep(NA,1), bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), 
+                              mrs_p.val=rep(NA,1), mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), 
+                              mrs_fdr=rep(NA,1), ss_coef=rep(NA,1), ss_p.val=rep(NA,1), 
+                              ss_lower=rep(NA,1), ss_upper=rep(NA,1), ss_fdr=rep(NA,1), 
+                              ws_coef=rep(NA,1), ws_p.val=rep(NA,1), ws_lower=rep(NA,1),
+                              ws_upper=rep(NA,1), ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), 
+                              mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1)))
+
+FigS5A <- FigS5A[c(5,1:4),]
+row.names(FigS5A) <- 1:nrow(FigS5A)
+FigS5A$Phenotype[c(2:5)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+FigS5A$Phenotype <- ifelse(is.na(FigS5A$bl_coef), 
+                      FigS5A$Phenotype,
+                      paste0("   ", FigS5A$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+FigS5A$bl_coef <- round(FigS5A$bl_coef,3)
+FigS5A$mrs_coef <- round(FigS5A$mrs_coef,3)
+FigS5A$ss_coef <- round(FigS5A$ss_coef,3)
+FigS5A$ws_coef <- round(FigS5A$ws_coef,3)
+FigS5A$bl_fdr <- format(FigS5A$bl_fdr, scientific=TRUE, digit=2)
+FigS5A$mrs_fdr <- format(FigS5A$mrs_fdr, scientific=TRUE, digit=2)
+FigS5A$ss_fdr <- format(FigS5A$ss_fdr, scientific=TRUE, digit=2)
+FigS5A$ws_fdr <- format(FigS5A$ws_fdr, scientific=TRUE, digit=2)
+FigS5A$bl_p.val <- format(FigS5A$bl_p.val, scientific=TRUE, digit=2)
+FigS5A$mrs_p.val <- format(FigS5A$mrs_p.val, scientific=TRUE, digit=2)
+FigS5A$ss_p.val <- format(FigS5A$ss_p.val, scientific=TRUE, digit=2)
+FigS5A$ws_p.val <- format(FigS5A$ws_p.val, scientific=TRUE, digit=2)
+
+# Add two blank columns for CI
+FigS5A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS5A$bl_lower <- round(FigS5A$bl_lower,3)
+FigS5A$mrs_lower <- round(FigS5A$mrs_lower,3)
+FigS5A$ss_lower <- round(FigS5A$ss_lower,3)
+FigS5A$ws_lower <- round(FigS5A$ws_lower,3)
+FigS5A$bl_upper <- round(FigS5A$bl_upper,4)
+FigS5A$mrs_upper <- round(FigS5A$mrs_upper,3)
+FigS5A$ss_upper <- round(FigS5A$ss_upper,3)
+FigS5A$ws_upper <- round(FigS5A$ws_upper,3)
+
+FigS5A$CI <- paste(sprintf("(%.2f, %.2f)", FigS5A$bl_lower, FigS5A$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS5A$mrs_lower, FigS5A$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS5A$ss_lower, FigS5A$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS5A$ws_lower, FigS5A$ws_upper),
+                sep = "\n")
+FigS5A$Beta <- paste(sprintf("%.2f", FigS5A$bl_coef),
+                sprintf("%.2f", FigS5A$mrs_coef),
+                sprintf("%.2f", FigS5A$ss_coef),
+                sprintf("%.2f", FigS5A$ws_coef),
+                sep = "\n")
+FigS5A$q.val <- paste(FigS5A$bl_fdr, FigS5A$mrs_fdr, FigS5A$ss_fdr, FigS5A$ws_fdr,sep = "\n")
+FigS5A$p.val <- paste(FigS5A$bl_p.val, FigS5A$mrs_p.val, FigS5A$ss_p.val, FigS5A$ws_p.val, sep = "\n")
+FigS5A$Sample.size <- paste(FigS5A$bl_s.size, FigS5A$mrs_s.size, FigS5A$ss_s.size, 
+                            FigS5A$ws_s.size,sep = "\n")
+
+FigS5A$CI[grepl("NA", FigS5A$CI)] <- "" # Any NA to blank
+FigS5A$Beta[grepl("NA", FigS5A$Beta)] <- "" # Any NA to blank
+FigS5A$q.val[grepl("NA", FigS5A$q.val)] <- "" # Any NA to blank
+FigS5A$p.val[grepl("NA", FigS5A$p.val)] <- "" # Any NA to blank
+FigS5A$Sample.size[grepl("NA", FigS5A$Sample.size)] <- ""
+
+#################### plot
+# Set-up theme
+tm <- forest_theme(base_size = 8,
+                   refline_lty = "solid",
+                   ci_pch = c(15, 18),
+                   ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
+                   footnote_gp = gpar(col = "blue"),
+                   legend_name = "CRP Type",
+                   legend_value = c("Blood CRP", "PRS EUR", "PRS wsum all",  "PRS wsum Hispanic" ),
+                   vertline_lty = c("dashed", "dotted"),
+                   vertline_col = c("#d6604d", "#bababa"),
+                   # Table cell padding, width 4 and heights 3
+                   )
+# Generate plot
+names(FigS5A)[27]<-'95%CI'
+plot <- forest(FigS5A[,c(1,28,27,30,29,31,26)], 
+            est = list(FigS5A$bl_coef,
+                       FigS5A$mrs_coef,
+                       FigS5A$ss_coef,
+                       FigS5A$ws_coef),
+            lower = list(FigS5A$bl_lower,
+                       FigS5A$mrs_lower,
+                         FigS5A$ss_lower,
+                        FigS5A$ws_lower), 
+            upper = list(FigS5A$bl_upper,
+                      FigS5A$mrs_upper,
+                         FigS5A$ss_upper,
+                        FigS5A$ws_upper),
+            ci_column = 7,
+            ref_line = 0, # 1
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+## Fig S5B
+
+``` r
+row.names(FigS5B) <- 1:nrow(FigS5B)
+sub <- split(FigS5B, FigS5B$group) 
+bl <- sub[[1]] %>% dplyr::select(-c(group))
+names(bl) <- paste0('bl_', names(bl))
+mrs <- sub[[2]] %>% dplyr::select(-c(group)) 
+names(mrs) <- paste0('mrs_', names(mrs))
+ss <- sub[[3]]%>% dplyr::select(-c(group)) 
+names(ss) <- paste0('ss_', names(ss))
+ws <- sub[[4]] %>% dplyr::select(-c(group))
+names(ws) <- paste0('ws_', names(ws))
+FigS5B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS5B)[1] <- 'Phenotype'
+
+FigS5B <- rbind(FigS5B, data.frame(Phenotype=c('Cognitive Function','Other Sleep Traits'),
+                              bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
+                              bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
+                              mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
+                              mrs_fdr=rep(NA,2), ss_coef=rep(NA,2), ss_p.val=rep(NA,2), 
+                              ss_lower=rep(NA,2), ss_upper=rep(NA,2), ss_fdr=rep(NA,2), 
+                              ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
+                              ws_upper=rep(NA,2), ws_fdr=rep(NA,2), bl_s.size=rep(NA,1), 
+                              mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1) ))
+
+FigS5B <- FigS5B[c(6,1:2, 7,3:5),]
+row.names(FigS5B) <- 1:nrow(FigS5B)
+FigS5B$Phenotype[c(2:3,6)]<-c('Change', 'Baseline', 'Sleep Duration')
+FigS5B$Phenotype <- ifelse(is.na(FigS5B$bl_coef), 
+                      FigS5B$Phenotype,
+                      paste0("   ", FigS5B$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+FigS5B$bl_coef <- round(FigS5B$bl_coef,3)
+FigS5B$mrs_coef <- round(FigS5B$mrs_coef,3)
+FigS5B$ss_coef <- round(FigS5B$ss_coef,3)
+FigS5B$ws_coef <- round(FigS5B$ws_coef,3)
+FigS5B$bl_fdr <- format(FigS5B$bl_fdr, scientific=TRUE, digit=2)
+FigS5B$mrs_fdr <- format(FigS5B$mrs_fdr, scientific=TRUE, digit=2)
+FigS5B$ss_fdr <- format(FigS5B$ss_fdr, scientific=TRUE, digit=2)
+FigS5B$ws_fdr <- format(FigS5B$ws_fdr, scientific=TRUE, digit=2)
+FigS5B$bl_p.val <- format(FigS5B$bl_p.val, scientific=TRUE, digit=2)
+FigS5B$mrs_p.val <- format(FigS5B$mrs_p.val, scientific=TRUE, digit=2)
+FigS5B$ss_p.val <- format(FigS5B$ss_p.val, scientific=TRUE, digit=2)
+FigS5B$ws_p.val <- format(FigS5B$ws_p.val, scientific=TRUE, digit=2)
+
+# Add two blank columns for CI
+FigS5B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS5B$bl_lower <- round(FigS5B$bl_lower,3)
+FigS5B$mrs_lower <- round(FigS5B$mrs_lower,3)
+FigS5B$ss_lower <- round(FigS5B$ss_lower,3)
+FigS5B$ws_lower <- round(FigS5B$ws_lower,3)
+FigS5B$bl_upper <- round(FigS5B$bl_upper,4)
+FigS5B$mrs_upper <- round(FigS5B$mrs_upper,3)
+FigS5B$ss_upper <- round(FigS5B$ss_upper,3)
+FigS5B$ws_upper <- round(FigS5B$ws_upper,3)
+
+FigS5B$CI <- paste(sprintf("(%.2f, %.2f)", FigS5B$bl_lower, FigS5B$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS5B$mrs_lower, FigS5B$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS5B$ss_lower, FigS5B$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS5B$ws_lower, FigS5B$ws_upper),
+                sep = "\n")
+FigS5B$Beta <- paste(sprintf("%.2f", FigS5B$bl_coef),
+                sprintf("%.2f", FigS5B$mrs_coef),
+                sprintf("%.2f", FigS5B$ss_coef),
+                sprintf("%.2f", FigS5B$ws_coef),
+                sep = "\n")
+FigS5B$q.val <- paste(FigS5B$bl_fdr, FigS5B$mrs_fdr, FigS5B$ss_fdr, FigS5B$ws_fdr,sep = "\n")
+FigS5B$p.val <- paste(FigS5B$bl_p.val, FigS5B$mrs_p.val, FigS5B$ss_p.val, FigS5B$ws_p.val, sep = "\n")
+FigS5B$Sample.size <- paste(FigS5B$bl_s.size, FigS5B$mrs_s.size, FigS5B$ss_s.size, 
+                            FigS5B$ws_s.size,sep = "\n")
+
+FigS5B$CI[grepl("NA", FigS5B$CI)] <- "" # Any NA to blank
+FigS5B$Beta[grepl("NA", FigS5B$Beta)] <- "" # Any NA to blank
+FigS5B$q.val[grepl("NA", FigS5B$q.val)] <- "" # Any NA to blank
+FigS5B$p.val[grepl("NA", FigS5B$p.val)] <- "" # Any NA to blank
+FigS5B$Sample.size[grepl("NA", FigS5B$Sample.size)] <- ""
+
+# Generate plot
+names(FigS5B)[27]<-'95%CI'
+plot <- forest(FigS5B[,c(1,28,27,30,29,31,26)], 
+            est = list(FigS5B$bl_coef,
+                       FigS5B$mrs_coef,
+                       FigS5B$ss_coef,
+                       FigS5B$ws_coef),
+            lower = list(FigS5B$bl_lower,
+                       FigS5B$mrs_lower,
+                         FigS5B$ss_lower,
+                        FigS5B$ws_lower), 
+            upper = list(FigS5B$bl_upper,
+                      FigS5B$mrs_upper,
+                         FigS5B$ss_upper,
+                        FigS5B$ws_upper),
+            ci_column = 7,
+            ref_line = 0, # 1
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+## Fig S5C
+
+``` r
+row.names(FigS5C) <- 1:nrow(FigS5C)
+sub <- split(FigS5C, FigS5C$group) 
+bl <- sub[[1]] %>% dplyr::select(-c(group))
+names(bl) <- paste0('bl_', names(bl))
+mrs <- sub[[2]] %>% dplyr::select(-c(group))
+names(mrs) <- paste0('mrs_', names(mrs))
+ss <- sub[[3]] %>% dplyr::select(-c(group))
+names(ss) <- paste0('ss_', names(ss))
+ws <- sub[[4]] %>% dplyr::select(-c(group))
+names(ws) <- paste0('ws_', names(ws))
+FigS5C<-cbind(bl,mrs,ss,ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS5C)[1]<-'Phenotype'
+
+FigS5C <- rbind(FigS5C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(NA,1),
+                              bl_p.val=rep(NA,1), bl_lower=rep(NA,1), bl_upper=rep(NA,1),
+                              bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), mrs_p.val=rep(NA,1),
+                              mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), mrs_fdr=rep(NA,1),
+                              ss_coef=rep(NA,1), ss_p.val=rep(NA,1), ss_lower=rep(NA,1),
+                              ss_upper=rep(NA,1), ss_fdr=rep(NA,1), ws_coef=rep(NA,1), 
+                              ws_p.val=rep(NA,1),ws_lower=rep(NA,1),ws_upper=rep(NA,1), 
+                              ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), ws_s.size=rep(NA,1),
+                              mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1) ))
+FigS5C <- FigS5C[c(5,1:4),]
+row.names(FigS5C) <- 1:nrow(FigS5C)
+FigS5C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
+FigS5C$Phenotype <- ifelse(is.na(FigS5C$bl_coef), 
+                      FigS5C$Phenotype,
+                      paste0("   ", FigS5C$Phenotype))
+
+FigS5C$bl_coef <- round(FigS5C$bl_coef,3)
+FigS5C$mrs_coef <- round(FigS5C$mrs_coef,3)
+FigS5C$ss_coef <- round(FigS5C$ss_coef,3)
+FigS5C$ws_coef <- round(FigS5C$ws_coef,3)
+FigS5C$bl_fdr <- format(FigS5C$bl_fdr, scientific=TRUE, digit=2)
+FigS5C$mrs_fdr <- format(FigS5C$mrs_fdr, scientific=TRUE, digit=2)
+FigS5C$ss_fdr <- format(FigS5C$ss_fdr, scientific=TRUE, digit=2)
+FigS5C$ws_fdr <- format(FigS5C$ws_fdr, scientific=TRUE, digit=2)
+FigS5C$bl_p.val <- format(FigS5C$bl_p.val, scientific=TRUE, digit=2)
+FigS5C$mrs_p.val <- format(FigS5C$mrs_p.val, scientific=TRUE, digit=2)
+FigS5C$ss_p.val <- format(FigS5C$ss_p.val, scientific=TRUE, digit=2)
+FigS5C$ws_p.val <- format(FigS5C$ws_p.val, scientific=TRUE, digit=2)
+
+# Add two blank columns for CI
+FigS5C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS5C$bl_lower <- round(FigS5C$bl_lower,3)
+FigS5C$mrs_lower <- round(FigS5C$mrs_lower,3)
+FigS5C$ss_lower <- round(FigS5C$ss_lower,3)
+FigS5C$ws_lower <- round(FigS5C$ws_lower,3)
+FigS5C$bl_upper <- round(FigS5C$bl_upper,3)
+FigS5C$mrs_upper <- round(FigS5C$mrs_upper,3)
+FigS5C$ss_upper <- round(FigS5C$ss_upper,3)
+FigS5C$ws_upper <- round(FigS5C$ws_upper,3)
+
+FigS5C$CI <- paste(sprintf("(%.2f, %.2f)", FigS5C$bl_lower, FigS5C$bl_upper),
+               sprintf("(%.2f, %.2f)", FigS5C$mrs_lower, FigS5C$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS5C$ss_lower, FigS5C$ss_upper),
+               sprintf("(%.2f, %.2f)", FigS5C$ws_lower, FigS5C$ws_upper),
+                sep = "\n")
+FigS5C$Beta <- paste(sprintf("%.2f", FigS5C$bl_coef),
+                sprintf("%.2f", FigS5C$mrs_coef),
+                sprintf("%.2f", FigS5C$ss_coef),
+                sprintf("%.2f", FigS5C$ws_coef),
+                sep = "\n")
+FigS5C$q.val <- paste(FigS5C$bl_fdr, FigS5C$mrs_fdr, FigS5C$ss_fdr, FigS5C$ws_fdr,sep = "\n")
+FigS5C$p.val <- paste(FigS5C$bl_p.val, FigS5C$mrs_p.val, FigS5C$ss_p.val, FigS5C$ws_p.val, sep = "\n")
+FigS5C$Sample.size <- paste(FigS5C$bl_s.size, FigS5C$mrs_s.size, FigS5C$ss_s.size, 
+                            FigS5C$ws_s.size,sep = "\n")
+
+FigS5C$CI[grepl("NA", FigS5C$CI)] <- "" # Any NA to blank
+FigS5C$Beta[grepl("NA", FigS5C$Beta)] <- "" # Any NA to blank
+FigS5C$q.val[grepl("NA", FigS5C$q.val)]<- ""
+FigS5C$p.val[grepl("NA", FigS5C$p.val)]<- ""
+FigS5C$Sample.size[grepl("NA", FigS5C$Sample.size)] <- ""
+names(FigS5C)[24] <- 'Odds Ratio'
+
+#################### plot
+names(FigS5C)[27] <- '95%CI'
+plot <- forest(FigS5C[,c(1,28,27,30,29,31,26)], #
+            est = list(FigS5C$bl_coef,
+                       FigS5C$mrs_coef,
+                       FigS5C$ss_coef,
+                       FigS5C$ws_coef),
+            lower = list(FigS5C$bl_lower,
+                       FigS5C$mrs_lower,
+                         FigS5C$ss_lower,
+                        FigS5C$ws_lower), 
+            upper = list(FigS5C$bl_upper,
+                      FigS5C$mrs_upper,
+                         FigS5C$ss_upper,
+                        FigS5C$ws_upper),
+            ci_column = 7,
+            ref_line = 1, 
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
 # Create Supplementary Table S6
 
 Creation of table S3-S4 please refer to PRS_selection.Rmd
@@ -787,8 +1143,8 @@ Creation of table S3-S4 please refer to PRS_selection.Rmd
 ``` r
 Tab.S6 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240524_MNR_OE.csv')
 Tab.S6$CI <- paste0('(', round(exp(Tab.S6$lower),2), ', ', round(exp(Tab.S6$upper),2), ')')
-Tab.S6 <- Tab.S6[,c(1,2,3,5,8)]
-names(Tab.S6) <- c('Comparison', 'PRS type', 'Odds ratio', 'p value', '95% CI')
+Tab.S6 <- Tab.S6[,c(1,2,3,5,9,8)]
+names(Tab.S6) <- c('Comparison', 'PRS type', 'Odds ratio', 'p value', '95% CI', 'Sample size')
 Tab.S6$Comparison <- rep(c('OSA with EDS VS no OSA', 'OSA without EDS VS no OSA', 
                            'All OSA VS no OSA'),3)
 Tab.S6$`Odds ratio` <- round(exp(Tab.S6$`Odds ratio`),2)
@@ -796,20 +1152,20 @@ Tab.S6$`p value` <- format(Tab.S6$`p value`, digits=1)
 kable(Tab.S6, row.names = F)
 ```
 
-| Comparison                | PRS type | Odds ratio | p value | 95% CI       |
-|:--------------------------|:---------|-----------:|:--------|:-------------|
-| OSA with EDS VS no OSA    | PRS-ty   |       1.04 | 0.61    | (0.89, 1.21) |
-| OSA without EDS VS no OSA | PRS-ty   |       0.98 | 0.55    | (0.9, 1.06)  |
-| All OSA VS no OSA         | PRS-ty   |       0.99 | 0.86    | (0.92, 1.07) |
-| OSA with EDS VS no OSA    | PRS-EUR  |       0.88 | 0.05    | (0.78, 1)    |
-| OSA without EDS VS no OSA | PRS-EUR  |       0.96 | 0.30    | (0.89, 1.04) |
-| All OSA VS no OSA         | PRS-EUR  |       0.94 | 0.11    | (0.88, 1.01) |
-| OSA with EDS VS no OSA    | PRS-wsum |       0.85 | 0.02    | (0.75, 0.97) |
-| OSA without EDS VS no OSA | PRS-wsum |       0.96 | 0.25    | (0.89, 1.03) |
-| All OSA VS no OSA         | PRS-wsum |       0.94 | 0.07    | (0.88, 1)    |
+| Comparison                | PRS type | Odds ratio | p value | 95% CI       | Sample size |
+|:--------------------------|:---------|-----------:|:--------|:-------------|------------:|
+| OSA with EDS VS no OSA    | PRS-ty   |       1.04 | 0.61    | (0.89, 1.21) |        8234 |
+| OSA without EDS VS no OSA | PRS-ty   |       0.98 | 0.55    | (0.9, 1.06)  |       10274 |
+| All OSA VS no OSA         | PRS-ty   |       0.99 | 0.86    | (0.92, 1.07) |       10956 |
+| OSA with EDS VS no OSA    | PRS-EUR  |       0.88 | 0.05    | (0.78, 1)    |        8234 |
+| OSA without EDS VS no OSA | PRS-EUR  |       0.96 | 0.30    | (0.89, 1.04) |       10274 |
+| All OSA VS no OSA         | PRS-EUR  |       0.94 | 0.11    | (0.88, 1.01) |       10956 |
+| OSA with EDS VS no OSA    | PRS-wsum |       0.88 | 0.03    | (0.78, 0.99) |        8234 |
+| OSA without EDS VS no OSA | PRS-wsum |       0.95 | 0.23    | (0.88, 1.03) |       10274 |
+| All OSA VS no OSA         | PRS-wsum |       0.94 | 0.08    | (0.87, 1.01) |       10956 |
 
 ``` r
-write.csv(Tab.S6, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S6.csv', row.names = FALSE)
+#write.csv(Tab.S6, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S6.csv', row.names = FALSE)
 ```
 
 # Create Supplementary Table S7-S9
