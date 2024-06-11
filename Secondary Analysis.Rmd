@@ -14,6 +14,7 @@ library(glmnet)
 library(svyVGAM)
 library(knitr)
 library(haven)
+library(mgcv)
 ```
 
 # Secondary Analysis
@@ -446,6 +447,42 @@ names(mrs_coefs) <- 'coef_hyper'
 mrs_coefs$CpG <- row.names(mrs_coefs)
 Hyper <- merge(mrs_coefs,chr_all[,c(2,12,16)],by='CpG')
 nrow(Hyper)
+```
+
+## Cubic Spline Model
+
+### Data preparation
+```{r}
+sdata <- read_csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
+ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+names(ev5)[2] <- 'SOL_ID'
+sdata<-merge(sdata,ev5[,c(2,5:9)],by='SOL_ID')
+sdata<-sdata[complete.cases(sdata$SLPDUR),]
+sdata<-sdata[complete.cases(sdata$EV1),]
+sdata<-sdata[complete.cases(sdata$BMI),]
+```
+
+### Fit model
+```{r}
+####### Blood CRP
+mrs_gam <- mgcv::gam(Zmrs_HEnet ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+summary(mrs_gam)
+
+preds.all <- predict(mrs_gam, newdata = sdata, type = 'terms', se.fit = TRUE)
+preds_df <- data.frame(SLPDUR = sdata$SLPDUR, 
+                       fit = preds.all$fit[,11], 
+                       lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
+                       upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
+#write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv',row.names = F)
+
+bld_gam <- mgcv::gam(lgCrp ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+summary(bld_gam)
+preds.all <- predict(bld_gam, newdata = sdata, type = 'terms', se.fit = TRUE)
+preds_df <- data.frame(SLPDUR = sdata$SLPDUR, 
+                       fit = preds.all$fit[,11], 
+                       lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
+                       upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
+#write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv',row.names = F)
 ```
 
 

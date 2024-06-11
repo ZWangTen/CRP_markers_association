@@ -786,9 +786,152 @@ nrow(Hyper)</code></pre>
 <pre><code>## [1] 14</code></pre>
 </div>
 </div>
+<div id="cubic-spline-model" class="section level2">
+<h2>Cubic Spline Model</h2>
+<div id="data-preparation-2" class="section level3">
+<h3>Data preparation</h3>
+<pre class="r"><code>sdata &lt;- read_csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv&#39;)</code></pre>
+<pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
+## e.g.:
+##   dat &lt;- vroom(...)
+##   problems(dat)</code></pre>
+<pre><code>## Rows: 2696 Columns: 138
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr  (20): Row_names, SOL_ID, CENTER, GENDER, INSULIN_FAST, SEVLT_RECALL, DI...
+## dbl (118): ID, HEIGHT, PSU_ID, WEIGHT_FINAL_NORM_OVERALL, AGE, AGG_PHYS, AGG...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
+names(ev5)[2] &lt;- &#39;SOL_ID&#39;
+sdata&lt;-merge(sdata,ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+sdata&lt;-sdata[complete.cases(sdata$SLPDUR),]
+sdata&lt;-sdata[complete.cases(sdata$EV1),]
+sdata&lt;-sdata[complete.cases(sdata$BMI),]</code></pre>
+</div>
+<div id="fit-model" class="section level3">
+<h3>Fit model</h3>
+<pre class="r"><code>####### Blood CRP
+mrs_gam &lt;- mgcv::gam(Zmrs_HEnet ~ s(SLPDUR,bs=&#39;cr&#39;, k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+summary(mrs_gam)</code></pre>
+<pre><code>## 
+## Family: gaussian 
+## Link function: identity 
+## 
+## Formula:
+## Zmrs_HEnet ~ s(SLPDUR, bs = &quot;cr&quot;, k = 3) + AGE + GENDER + BMI + 
+##     CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5
+## 
+## Parametric coefficients:
+##                                         Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)                            -1.301266   0.227359  -5.723 1.19e-08
+## AGE                                    -0.009756   0.002635  -3.703 0.000219
+## GENDERMale                             -0.063055   0.042072  -1.499 0.134091
+## BMI                                     0.064895   0.003568  18.186  &lt; 2e-16
+## CENTERChicago                          -0.145163   0.077039  -1.884 0.059664
+## CENTERMiami                             0.068893   0.096824   0.712 0.476835
+## CENTERSan Diego                        -0.158008   0.098875  -1.598 0.110179
+## BKGRD1_C7Cuban                         -0.042973   0.137127  -0.313 0.754024
+## BKGRD1_C7Domician                      -0.179156   0.145122  -1.235 0.217146
+## BKGRD1_C7Mexican                       -0.115960   0.155661  -0.745 0.456382
+## BKGRD1_C7More than one/Other heritage  -0.014825   0.188066  -0.079 0.937175
+## BKGRD1_C7Puerto Rican                   0.039435   0.173153   0.228 0.819865
+## BKGRD1_C7South American                 0.224665   0.130459   1.722 0.085197
+## EV1                                    -8.154252   4.760522  -1.713 0.086880
+## EV2                                    -2.693626   2.462788  -1.094 0.274198
+## EV3                                    -4.541089   4.890751  -0.929 0.353252
+## EV4                                   -12.230375   4.619285  -2.648 0.008165
+## EV5                                    -9.051425   3.333394  -2.715 0.006674
+##                                          
+## (Intercept)                           ***
+## AGE                                   ***
+## GENDERMale                               
+## BMI                                   ***
+## CENTERChicago                         .  
+## CENTERMiami                              
+## CENTERSan Diego                          
+## BKGRD1_C7Cuban                           
+## BKGRD1_C7Domician                        
+## BKGRD1_C7Mexican                         
+## BKGRD1_C7More than one/Other heritage    
+## BKGRD1_C7Puerto Rican                    
+## BKGRD1_C7South American               .  
+## EV1                                   .  
+## EV2                                      
+## EV3                                      
+## EV4                                   ** 
+## EV5                                   ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Approximate significance of smooth terms:
+##             edf Ref.df     F p-value  
+## s(SLPDUR) 1.748  1.936 3.437  0.0211 *
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## R-sq.(adj) =  0.182   Deviance explained =   19%
+## GCV = 0.82829  Scale est. = 0.82061   n = 2130</code></pre>
+<pre class="r"><code>preds.all &lt;- predict(mrs_gam, newdata = sdata, type = &#39;terms&#39;, se.fit = TRUE)
+preds_df &lt;- data.frame(SLPDUR = sdata$SLPDUR, 
+                       fit = preds.all$fit[,11], 
+                       lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
+                       upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
+#write.csv(preds_df,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv&#39;,row.names = F)
+
+bld_gam &lt;- mgcv::gam(lgCrp ~ s(SLPDUR,bs=&#39;cr&#39;, k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+summary(bld_gam)</code></pre>
+<pre><code>## 
+## Family: gaussian 
+## Link function: identity 
+## 
+## Formula:
+## lgCrp ~ s(SLPDUR, bs = &quot;cr&quot;, k = 3) + AGE + GENDER + BMI + CENTER + 
+##     BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5
+## 
+## Parametric coefficients:
+##                                        Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                           -1.218830   0.232258  -5.248 1.69e-07 ***
+## AGE                                   -0.000293   0.002691  -0.109   0.9133    
+## GENDERMale                            -0.341201   0.042977  -7.939 3.28e-15 ***
+## BMI                                    0.075132   0.003645  20.612  &lt; 2e-16 ***
+## CENTERChicago                         -0.095667   0.078697  -1.216   0.2243    
+## CENTERMiami                            0.147357   0.098907   1.490   0.1364    
+## CENTERSan Diego                       -0.115050   0.101003  -1.139   0.2548    
+## BKGRD1_C7Cuban                        -0.071974   0.140078  -0.514   0.6074    
+## BKGRD1_C7Domician                     -0.170872   0.148244  -1.153   0.2492    
+## BKGRD1_C7Mexican                      -0.043418   0.159010  -0.273   0.7848    
+## BKGRD1_C7More than one/Other heritage -0.038858   0.192115  -0.202   0.8397    
+## BKGRD1_C7Puerto Rican                 -0.058241   0.176881  -0.329   0.7420    
+## BKGRD1_C7South American                0.034584   0.133266   0.260   0.7953    
+## EV1                                   -9.351567   4.862933  -1.923   0.0546 .  
+## EV2                                    2.935362   2.515771   1.167   0.2434    
+## EV3                                    0.492921   4.995970   0.099   0.9214    
+## EV4                                   -5.340681   4.718663  -1.132   0.2578    
+## EV5                                   -1.435045   3.405111  -0.421   0.6735    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Approximate significance of smooth terms:
+##             edf Ref.df     F p-value   
+## s(SLPDUR) 1.765  1.945 6.139 0.00147 **
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## R-sq.(adj) =   0.22   Deviance explained = 22.7%
+## GCV = 0.86432  Scale est. = 0.8563    n = 2130</code></pre>
+<pre class="r"><code>preds.all &lt;- predict(bld_gam, newdata = sdata, type = &#39;terms&#39;, se.fit = TRUE)
+preds_df &lt;- data.frame(SLPDUR = sdata$SLPDUR, 
+                       fit = preds.all$fit[,11], 
+                       lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
+                       upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
+#write.csv(preds_df,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv&#39;,row.names = F)</code></pre>
+</div>
+</div>
 <div id="osa-with-and-without-eds" class="section level2">
 <h2>OSA with and without EDS</h2>
-<div id="data-preparation-2" class="section level3">
+<div id="data-preparation-3" class="section level3">
 <h3>Data preparation</h3>
 <pre class="r"><code>ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
 # OSA with EDS and without
@@ -904,7 +1047,7 @@ tab$s.size[c(3,6,9)] &lt;- table(sdata$OSA)[1] + table(sdata$OSA)[2]
 <div id="blood--and-prs-crp-association-analysis-using-all-hchssol-samples" class="section level2">
 <h2>Blood- and PRS-CRP association analysis using all HCHS/SOL
 samples</h2>
-<div id="data-preparation-3" class="section level3">
+<div id="data-preparation-4" class="section level3">
 <h3>Data preparation</h3>
 <pre class="r"><code>phen &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Datasets/metsleep_covariates_20200129.csv&quot;)
 crp&lt;-read.csv(&#39;/Volumes/Sofer Lab/HCHS_SOL/Datasets/ms0725_covariates_20190129.csv&#39;)

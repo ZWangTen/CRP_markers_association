@@ -742,6 +742,30 @@ plot
 
 # Create Figure S5
 
+```{r}
+### Figure S5A
+preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv')
+ggplot()  +
+  geom_line(data = preds_df, aes(x = SLPDUR, y = fit), color = "blue", size = 1) +
+  geom_ribbon(data = preds_df, aes(x = SLPDUR, ymin = lwr, ymax = upr), alpha = 0.2, fill = "blue") +
+  labs(title = "Cubic Spline Fit with GAM (k=3)",
+       x = "Sleep Duration",
+       y = "MRS-CRP") +
+  theme_minimal()
+
+### Figure S5B
+preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv')
+ggplot()  +
+  geom_line(data = preds_df, aes(x = SLPDUR, y = fit), color = "blue", size = 1) +
+  geom_ribbon(data = preds_df, aes(x = SLPDUR, ymin = lwr, ymax = upr), alpha = 0.2, fill = "blue") +
+  labs(title = "Cubic Spline Fit with GAM (k=3)",
+       x = "Sleep Duration",
+       y = "Blood CRP") +
+  theme_minimal()
+```
+
+# Create Figure S6
+
 ## Read Data
 ```{r}
 rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_lgCRP_all.csv')
@@ -761,18 +785,18 @@ rprs$pheno[c(3:4,17:18,31:32)] <- rep(c('cog_global', 'cog_change'), 3)
 pl <- rbind(rmrs,rprs)
 pl <- pl[order(pl$pheno),]
 row.names(pl) <- 1:nrow(pl)
-FigS5A <- pl[c(32:47),]
-FigS5B <- pl[c(1:8, 13:16, 48:55),]
-FigS5C <- pl[c(9:12, 17:20, 24:31),]
-FigS5C$coef <- exp(FigS5C$coef)
-FigS5C$lower <- exp(FigS5C$lower)
-FigS5C$upper <- exp(FigS5C$upper)
+FigS6A <- pl[c(32:47),]
+FigS6B <- pl[c(1:8, 13:16, 48:55),]
+FigS6C <- pl[c(9:12, 17:20, 24:31),]
+FigS6C$coef <- exp(FigS6C$coef)
+FigS6C$lower <- exp(FigS6C$lower)
+FigS6C$upper <- exp(FigS6C$upper)
 ```
 
-## Fig S5A
+## Fig S6A
 ```{r, fig.width=10}
-row.names(FigS5A) <- 1:nrow(FigS5A)
-sub <- split(FigS5A, FigS5A$group) 
+row.names(FigS6A) <- 1:nrow(FigS6A)
+sub <- split(FigS6A, FigS6A$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
 names(bl) <- paste0('bl_', names(bl))
 mrs <- sub[[2]] %>% dplyr::select(-c(group)) 
@@ -781,10 +805,10 @@ ss <- sub[[3]]%>% dplyr::select(-c(group))
 names(ss) <- paste0('ss_', names(ss))
 ws <- sub[[4]] %>% dplyr::select(-c(group))
 names(ws) <- paste0('ws_', names(ws))
-FigS5A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
-names(FigS5A)[1] <- 'Phenotype'
+FigS6A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS6A)[1] <- 'Phenotype'
 
-FigS5A <- rbind(FigS5A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
+FigS6A <- rbind(FigS6A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
                               bl_coef=rep(NA,1), bl_p.val=rep(NA,1), bl_lower=rep(NA,1),
                               bl_upper=rep(NA,1), bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), 
                               mrs_p.val=rep(NA,1), mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), 
@@ -794,58 +818,58 @@ FigS5A <- rbind(FigS5A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
                               ws_upper=rep(NA,1), ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), 
                               mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1)))
 
-FigS5A <- FigS5A[c(5,1:4),]
-row.names(FigS5A) <- 1:nrow(FigS5A)
-FigS5A$Phenotype[c(2:5)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
-FigS5A$Phenotype <- ifelse(is.na(FigS5A$bl_coef), 
-                      FigS5A$Phenotype,
-                      paste0("   ", FigS5A$Phenotype))
+FigS6A <- FigS6A[c(5,1:4),]
+row.names(FigS6A) <- 1:nrow(FigS6A)
+FigS6A$Phenotype[c(2:5)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+FigS6A$Phenotype <- ifelse(is.na(FigS6A$bl_coef), 
+                      FigS6A$Phenotype,
+                      paste0("   ", FigS6A$Phenotype))
 # NA to blank or NA will be transformed to carachter.
-FigS5A$bl_coef <- round(FigS5A$bl_coef,3)
-FigS5A$mrs_coef <- round(FigS5A$mrs_coef,3)
-FigS5A$ss_coef <- round(FigS5A$ss_coef,3)
-FigS5A$ws_coef <- round(FigS5A$ws_coef,3)
-FigS5A$bl_fdr <- format(FigS5A$bl_fdr, scientific=TRUE, digit=2)
-FigS5A$mrs_fdr <- format(FigS5A$mrs_fdr, scientific=TRUE, digit=2)
-FigS5A$ss_fdr <- format(FigS5A$ss_fdr, scientific=TRUE, digit=2)
-FigS5A$ws_fdr <- format(FigS5A$ws_fdr, scientific=TRUE, digit=2)
-FigS5A$bl_p.val <- format(FigS5A$bl_p.val, scientific=TRUE, digit=2)
-FigS5A$mrs_p.val <- format(FigS5A$mrs_p.val, scientific=TRUE, digit=2)
-FigS5A$ss_p.val <- format(FigS5A$ss_p.val, scientific=TRUE, digit=2)
-FigS5A$ws_p.val <- format(FigS5A$ws_p.val, scientific=TRUE, digit=2)
+FigS6A$bl_coef <- round(FigS6A$bl_coef,3)
+FigS6A$mrs_coef <- round(FigS6A$mrs_coef,3)
+FigS6A$ss_coef <- round(FigS6A$ss_coef,3)
+FigS6A$ws_coef <- round(FigS6A$ws_coef,3)
+FigS6A$bl_fdr <- format(FigS6A$bl_fdr, scientific=TRUE, digit=2)
+FigS6A$mrs_fdr <- format(FigS6A$mrs_fdr, scientific=TRUE, digit=2)
+FigS6A$ss_fdr <- format(FigS6A$ss_fdr, scientific=TRUE, digit=2)
+FigS6A$ws_fdr <- format(FigS6A$ws_fdr, scientific=TRUE, digit=2)
+FigS6A$bl_p.val <- format(FigS6A$bl_p.val, scientific=TRUE, digit=2)
+FigS6A$mrs_p.val <- format(FigS6A$mrs_p.val, scientific=TRUE, digit=2)
+FigS6A$ss_p.val <- format(FigS6A$ss_p.val, scientific=TRUE, digit=2)
+FigS6A$ws_p.val <- format(FigS6A$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
-FigS5A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+FigS6A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
 # Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS5A$bl_lower <- round(FigS5A$bl_lower,3)
-FigS5A$mrs_lower <- round(FigS5A$mrs_lower,3)
-FigS5A$ss_lower <- round(FigS5A$ss_lower,3)
-FigS5A$ws_lower <- round(FigS5A$ws_lower,3)
-FigS5A$bl_upper <- round(FigS5A$bl_upper,4)
-FigS5A$mrs_upper <- round(FigS5A$mrs_upper,3)
-FigS5A$ss_upper <- round(FigS5A$ss_upper,3)
-FigS5A$ws_upper <- round(FigS5A$ws_upper,3)
+FigS6A$bl_lower <- round(FigS6A$bl_lower,3)
+FigS6A$mrs_lower <- round(FigS6A$mrs_lower,3)
+FigS6A$ss_lower <- round(FigS6A$ss_lower,3)
+FigS6A$ws_lower <- round(FigS6A$ws_lower,3)
+FigS6A$bl_upper <- round(FigS6A$bl_upper,4)
+FigS6A$mrs_upper <- round(FigS6A$mrs_upper,3)
+FigS6A$ss_upper <- round(FigS6A$ss_upper,3)
+FigS6A$ws_upper <- round(FigS6A$ws_upper,3)
 
-FigS5A$CI <- paste(sprintf("(%.2f, %.2f)", FigS5A$bl_lower, FigS5A$bl_upper), 
-                sprintf("(%.2f, %.2f)", FigS5A$mrs_lower, FigS5A$mrs_upper),
-                sprintf("(%.2f, %.2f)", FigS5A$ss_lower, FigS5A$ss_upper),
-                sprintf("(%.2f, %.2f)", FigS5A$ws_lower, FigS5A$ws_upper),
+FigS6A$CI <- paste(sprintf("(%.2f, %.2f)", FigS6A$bl_lower, FigS6A$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS6A$mrs_lower, FigS6A$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS6A$ss_lower, FigS6A$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS6A$ws_lower, FigS6A$ws_upper),
                 sep = "\n")
-FigS5A$Beta <- paste(sprintf("%.2f", FigS5A$bl_coef),
-                sprintf("%.2f", FigS5A$mrs_coef),
-                sprintf("%.2f", FigS5A$ss_coef),
-                sprintf("%.2f", FigS5A$ws_coef),
+FigS6A$Beta <- paste(sprintf("%.2f", FigS6A$bl_coef),
+                sprintf("%.2f", FigS6A$mrs_coef),
+                sprintf("%.2f", FigS6A$ss_coef),
+                sprintf("%.2f", FigS6A$ws_coef),
                 sep = "\n")
-FigS5A$q.val <- paste(FigS5A$bl_fdr, FigS5A$mrs_fdr, FigS5A$ss_fdr, FigS5A$ws_fdr,sep = "\n")
-FigS5A$p.val <- paste(FigS5A$bl_p.val, FigS5A$mrs_p.val, FigS5A$ss_p.val, FigS5A$ws_p.val, sep = "\n")
-FigS5A$Sample.size <- paste(FigS5A$bl_s.size, FigS5A$mrs_s.size, FigS5A$ss_s.size, 
-                            FigS5A$ws_s.size,sep = "\n")
+FigS6A$q.val <- paste(FigS6A$bl_fdr, FigS6A$mrs_fdr, FigS6A$ss_fdr, FigS6A$ws_fdr,sep = "\n")
+FigS6A$p.val <- paste(FigS6A$bl_p.val, FigS6A$mrs_p.val, FigS6A$ss_p.val, FigS6A$ws_p.val, sep = "\n")
+FigS6A$Sample.size <- paste(FigS6A$bl_s.size, FigS6A$mrs_s.size, FigS6A$ss_s.size, 
+                            FigS6A$ws_s.size,sep = "\n")
 
-FigS5A$CI[grepl("NA", FigS5A$CI)] <- "" # Any NA to blank
-FigS5A$Beta[grepl("NA", FigS5A$Beta)] <- "" # Any NA to blank
-FigS5A$q.val[grepl("NA", FigS5A$q.val)] <- "" # Any NA to blank
-FigS5A$p.val[grepl("NA", FigS5A$p.val)] <- "" # Any NA to blank
-FigS5A$Sample.size[grepl("NA", FigS5A$Sample.size)] <- ""
+FigS6A$CI[grepl("NA", FigS6A$CI)] <- "" # Any NA to blank
+FigS6A$Beta[grepl("NA", FigS6A$Beta)] <- "" # Any NA to blank
+FigS6A$q.val[grepl("NA", FigS6A$q.val)] <- "" # Any NA to blank
+FigS6A$p.val[grepl("NA", FigS6A$p.val)] <- "" # Any NA to blank
+FigS6A$Sample.size[grepl("NA", FigS6A$Sample.size)] <- ""
 
 #################### plot
 # Set-up theme
@@ -861,30 +885,30 @@ tm <- forest_theme(base_size = 8,
                    # Table cell padding, width 4 and heights 3
                    )
 # Generate plot
-names(FigS5A)[27]<-'95%CI'
-plot <- forest(FigS5A[,c(1,28,27,30,29,31,26)], 
-            est = list(FigS5A$bl_coef,
-                       FigS5A$mrs_coef,
-                       FigS5A$ss_coef,
-                       FigS5A$ws_coef),
-            lower = list(FigS5A$bl_lower,
-                       FigS5A$mrs_lower,
-                         FigS5A$ss_lower,
-                        FigS5A$ws_lower), 
-            upper = list(FigS5A$bl_upper,
-                      FigS5A$mrs_upper,
-                         FigS5A$ss_upper,
-                        FigS5A$ws_upper),
+names(FigS6A)[27]<-'95%CI'
+plot <- forest(FigS6A[,c(1,28,27,30,29,31,26)], 
+            est = list(FigS6A$bl_coef,
+                       FigS6A$mrs_coef,
+                       FigS6A$ss_coef,
+                       FigS6A$ws_coef),
+            lower = list(FigS6A$bl_lower,
+                       FigS6A$mrs_lower,
+                         FigS6A$ss_lower,
+                        FigS6A$ws_lower), 
+            upper = list(FigS6A$bl_upper,
+                      FigS6A$mrs_upper,
+                         FigS6A$ss_upper,
+                        FigS6A$ws_upper),
             ci_column = 7,
             ref_line = 0, # 1
             theme = tm)
 plot
 ```
 
-## Fig S5B
+## Fig S6B
 ```{r, fig.width=10}
-row.names(FigS5B) <- 1:nrow(FigS5B)
-sub <- split(FigS5B, FigS5B$group) 
+row.names(FigS6B) <- 1:nrow(FigS6B)
+sub <- split(FigS6B, FigS6B$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
 names(bl) <- paste0('bl_', names(bl))
 mrs <- sub[[2]] %>% dplyr::select(-c(group)) 
@@ -893,10 +917,10 @@ ss <- sub[[3]]%>% dplyr::select(-c(group))
 names(ss) <- paste0('ss_', names(ss))
 ws <- sub[[4]] %>% dplyr::select(-c(group))
 names(ws) <- paste0('ws_', names(ws))
-FigS5B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
-names(FigS5B)[1] <- 'Phenotype'
+FigS6B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS6B)[1] <- 'Phenotype'
 
-FigS5B <- rbind(FigS5B, data.frame(Phenotype=c('Cognitive Function','Other Sleep Traits'),
+FigS6B <- rbind(FigS6B, data.frame(Phenotype=c('Cognitive Function','Other Sleep Traits'),
                               bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
                               bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
                               mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
@@ -906,84 +930,84 @@ FigS5B <- rbind(FigS5B, data.frame(Phenotype=c('Cognitive Function','Other Sleep
                               ws_upper=rep(NA,2), ws_fdr=rep(NA,2), bl_s.size=rep(NA,1), 
                               mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1) ))
 
-FigS5B <- FigS5B[c(6,1:2, 7,3:5),]
-row.names(FigS5B) <- 1:nrow(FigS5B)
-FigS5B$Phenotype[c(2:3,6)]<-c('Change', 'Baseline', 'Sleep Duration')
-FigS5B$Phenotype <- ifelse(is.na(FigS5B$bl_coef), 
-                      FigS5B$Phenotype,
-                      paste0("   ", FigS5B$Phenotype))
+FigS6B <- FigS6B[c(6,1:2, 7,3:5),]
+row.names(FigS6B) <- 1:nrow(FigS6B)
+FigS6B$Phenotype[c(2:3,6)]<-c('Change', 'Baseline', 'Sleep Duration')
+FigS6B$Phenotype <- ifelse(is.na(FigS6B$bl_coef), 
+                      FigS6B$Phenotype,
+                      paste0("   ", FigS6B$Phenotype))
 # NA to blank or NA will be transformed to carachter.
-FigS5B$bl_coef <- round(FigS5B$bl_coef,3)
-FigS5B$mrs_coef <- round(FigS5B$mrs_coef,3)
-FigS5B$ss_coef <- round(FigS5B$ss_coef,3)
-FigS5B$ws_coef <- round(FigS5B$ws_coef,3)
-FigS5B$bl_fdr <- format(FigS5B$bl_fdr, scientific=TRUE, digit=2)
-FigS5B$mrs_fdr <- format(FigS5B$mrs_fdr, scientific=TRUE, digit=2)
-FigS5B$ss_fdr <- format(FigS5B$ss_fdr, scientific=TRUE, digit=2)
-FigS5B$ws_fdr <- format(FigS5B$ws_fdr, scientific=TRUE, digit=2)
-FigS5B$bl_p.val <- format(FigS5B$bl_p.val, scientific=TRUE, digit=2)
-FigS5B$mrs_p.val <- format(FigS5B$mrs_p.val, scientific=TRUE, digit=2)
-FigS5B$ss_p.val <- format(FigS5B$ss_p.val, scientific=TRUE, digit=2)
-FigS5B$ws_p.val <- format(FigS5B$ws_p.val, scientific=TRUE, digit=2)
+FigS6B$bl_coef <- round(FigS6B$bl_coef,3)
+FigS6B$mrs_coef <- round(FigS6B$mrs_coef,3)
+FigS6B$ss_coef <- round(FigS6B$ss_coef,3)
+FigS6B$ws_coef <- round(FigS6B$ws_coef,3)
+FigS6B$bl_fdr <- format(FigS6B$bl_fdr, scientific=TRUE, digit=2)
+FigS6B$mrs_fdr <- format(FigS6B$mrs_fdr, scientific=TRUE, digit=2)
+FigS6B$ss_fdr <- format(FigS6B$ss_fdr, scientific=TRUE, digit=2)
+FigS6B$ws_fdr <- format(FigS6B$ws_fdr, scientific=TRUE, digit=2)
+FigS6B$bl_p.val <- format(FigS6B$bl_p.val, scientific=TRUE, digit=2)
+FigS6B$mrs_p.val <- format(FigS6B$mrs_p.val, scientific=TRUE, digit=2)
+FigS6B$ss_p.val <- format(FigS6B$ss_p.val, scientific=TRUE, digit=2)
+FigS6B$ws_p.val <- format(FigS6B$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
-FigS5B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+FigS6B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
 # Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS5B$bl_lower <- round(FigS5B$bl_lower,3)
-FigS5B$mrs_lower <- round(FigS5B$mrs_lower,3)
-FigS5B$ss_lower <- round(FigS5B$ss_lower,3)
-FigS5B$ws_lower <- round(FigS5B$ws_lower,3)
-FigS5B$bl_upper <- round(FigS5B$bl_upper,4)
-FigS5B$mrs_upper <- round(FigS5B$mrs_upper,3)
-FigS5B$ss_upper <- round(FigS5B$ss_upper,3)
-FigS5B$ws_upper <- round(FigS5B$ws_upper,3)
+FigS6B$bl_lower <- round(FigS6B$bl_lower,3)
+FigS6B$mrs_lower <- round(FigS6B$mrs_lower,3)
+FigS6B$ss_lower <- round(FigS6B$ss_lower,3)
+FigS6B$ws_lower <- round(FigS6B$ws_lower,3)
+FigS6B$bl_upper <- round(FigS6B$bl_upper,4)
+FigS6B$mrs_upper <- round(FigS6B$mrs_upper,3)
+FigS6B$ss_upper <- round(FigS6B$ss_upper,3)
+FigS6B$ws_upper <- round(FigS6B$ws_upper,3)
 
-FigS5B$CI <- paste(sprintf("(%.2f, %.2f)", FigS5B$bl_lower, FigS5B$bl_upper), 
-                sprintf("(%.2f, %.2f)", FigS5B$mrs_lower, FigS5B$mrs_upper),
-                sprintf("(%.2f, %.2f)", FigS5B$ss_lower, FigS5B$ss_upper),
-                sprintf("(%.2f, %.2f)", FigS5B$ws_lower, FigS5B$ws_upper),
+FigS6B$CI <- paste(sprintf("(%.2f, %.2f)", FigS6B$bl_lower, FigS6B$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS6B$mrs_lower, FigS6B$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS6B$ss_lower, FigS6B$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS6B$ws_lower, FigS6B$ws_upper),
                 sep = "\n")
-FigS5B$Beta <- paste(sprintf("%.2f", FigS5B$bl_coef),
-                sprintf("%.2f", FigS5B$mrs_coef),
-                sprintf("%.2f", FigS5B$ss_coef),
-                sprintf("%.2f", FigS5B$ws_coef),
+FigS6B$Beta <- paste(sprintf("%.2f", FigS6B$bl_coef),
+                sprintf("%.2f", FigS6B$mrs_coef),
+                sprintf("%.2f", FigS6B$ss_coef),
+                sprintf("%.2f", FigS6B$ws_coef),
                 sep = "\n")
-FigS5B$q.val <- paste(FigS5B$bl_fdr, FigS5B$mrs_fdr, FigS5B$ss_fdr, FigS5B$ws_fdr,sep = "\n")
-FigS5B$p.val <- paste(FigS5B$bl_p.val, FigS5B$mrs_p.val, FigS5B$ss_p.val, FigS5B$ws_p.val, sep = "\n")
-FigS5B$Sample.size <- paste(FigS5B$bl_s.size, FigS5B$mrs_s.size, FigS5B$ss_s.size, 
-                            FigS5B$ws_s.size,sep = "\n")
+FigS6B$q.val <- paste(FigS6B$bl_fdr, FigS6B$mrs_fdr, FigS6B$ss_fdr, FigS6B$ws_fdr,sep = "\n")
+FigS6B$p.val <- paste(FigS6B$bl_p.val, FigS6B$mrs_p.val, FigS6B$ss_p.val, FigS6B$ws_p.val, sep = "\n")
+FigS6B$Sample.size <- paste(FigS6B$bl_s.size, FigS6B$mrs_s.size, FigS6B$ss_s.size, 
+                            FigS6B$ws_s.size,sep = "\n")
 
-FigS5B$CI[grepl("NA", FigS5B$CI)] <- "" # Any NA to blank
-FigS5B$Beta[grepl("NA", FigS5B$Beta)] <- "" # Any NA to blank
-FigS5B$q.val[grepl("NA", FigS5B$q.val)] <- "" # Any NA to blank
-FigS5B$p.val[grepl("NA", FigS5B$p.val)] <- "" # Any NA to blank
-FigS5B$Sample.size[grepl("NA", FigS5B$Sample.size)] <- ""
+FigS6B$CI[grepl("NA", FigS6B$CI)] <- "" # Any NA to blank
+FigS6B$Beta[grepl("NA", FigS6B$Beta)] <- "" # Any NA to blank
+FigS6B$q.val[grepl("NA", FigS6B$q.val)] <- "" # Any NA to blank
+FigS6B$p.val[grepl("NA", FigS6B$p.val)] <- "" # Any NA to blank
+FigS6B$Sample.size[grepl("NA", FigS6B$Sample.size)] <- ""
 
 # Generate plot
-names(FigS5B)[27]<-'95%CI'
-plot <- forest(FigS5B[,c(1,28,27,30,29,31,26)], 
-            est = list(FigS5B$bl_coef,
-                       FigS5B$mrs_coef,
-                       FigS5B$ss_coef,
-                       FigS5B$ws_coef),
-            lower = list(FigS5B$bl_lower,
-                       FigS5B$mrs_lower,
-                         FigS5B$ss_lower,
-                        FigS5B$ws_lower), 
-            upper = list(FigS5B$bl_upper,
-                      FigS5B$mrs_upper,
-                         FigS5B$ss_upper,
-                        FigS5B$ws_upper),
+names(FigS6B)[27]<-'95%CI'
+plot <- forest(FigS6B[,c(1,28,27,30,29,31,26)], 
+            est = list(FigS6B$bl_coef,
+                       FigS6B$mrs_coef,
+                       FigS6B$ss_coef,
+                       FigS6B$ws_coef),
+            lower = list(FigS6B$bl_lower,
+                       FigS6B$mrs_lower,
+                         FigS6B$ss_lower,
+                        FigS6B$ws_lower), 
+            upper = list(FigS6B$bl_upper,
+                      FigS6B$mrs_upper,
+                         FigS6B$ss_upper,
+                        FigS6B$ws_upper),
             ci_column = 7,
             ref_line = 0, # 1
             theme = tm)
 plot
 ```
 
-## Fig S5C
+## Fig S6C
 ```{r, fig.width=10}
-row.names(FigS5C) <- 1:nrow(FigS5C)
-sub <- split(FigS5C, FigS5C$group) 
+row.names(FigS6C) <- 1:nrow(FigS6C)
+sub <- split(FigS6C, FigS6C$group) 
 bl <- sub[[1]] %>% dplyr::select(-c(group))
 names(bl) <- paste0('bl_', names(bl))
 mrs <- sub[[2]] %>% dplyr::select(-c(group))
@@ -992,10 +1016,10 @@ ss <- sub[[3]] %>% dplyr::select(-c(group))
 names(ss) <- paste0('ss_', names(ss))
 ws <- sub[[4]] %>% dplyr::select(-c(group))
 names(ws) <- paste0('ws_', names(ws))
-FigS5C<-cbind(bl,mrs,ss,ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
-names(FigS5C)[1]<-'Phenotype'
+FigS6C<-cbind(bl,mrs,ss,ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
+names(FigS6C)[1]<-'Phenotype'
 
-FigS5C <- rbind(FigS5C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(NA,1),
+FigS6C <- rbind(FigS6C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(NA,1),
                               bl_p.val=rep(NA,1), bl_lower=rep(NA,1), bl_upper=rep(NA,1),
                               bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), mrs_p.val=rep(NA,1),
                               mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), mrs_fdr=rep(NA,1),
@@ -1004,75 +1028,75 @@ FigS5C <- rbind(FigS5C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(
                               ws_p.val=rep(NA,1),ws_lower=rep(NA,1),ws_upper=rep(NA,1), 
                               ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), ws_s.size=rep(NA,1),
                               mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1) ))
-FigS5C <- FigS5C[c(5,1:4),]
-row.names(FigS5C) <- 1:nrow(FigS5C)
-FigS5C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
-FigS5C$Phenotype <- ifelse(is.na(FigS5C$bl_coef), 
-                      FigS5C$Phenotype,
-                      paste0("   ", FigS5C$Phenotype))
+FigS6C <- FigS6C[c(5,1:4),]
+row.names(FigS6C) <- 1:nrow(FigS6C)
+FigS6C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
+FigS6C$Phenotype <- ifelse(is.na(FigS6C$bl_coef), 
+                      FigS6C$Phenotype,
+                      paste0("   ", FigS6C$Phenotype))
 
-FigS5C$bl_coef <- round(FigS5C$bl_coef,3)
-FigS5C$mrs_coef <- round(FigS5C$mrs_coef,3)
-FigS5C$ss_coef <- round(FigS5C$ss_coef,3)
-FigS5C$ws_coef <- round(FigS5C$ws_coef,3)
-FigS5C$bl_fdr <- format(FigS5C$bl_fdr, scientific=TRUE, digit=2)
-FigS5C$mrs_fdr <- format(FigS5C$mrs_fdr, scientific=TRUE, digit=2)
-FigS5C$ss_fdr <- format(FigS5C$ss_fdr, scientific=TRUE, digit=2)
-FigS5C$ws_fdr <- format(FigS5C$ws_fdr, scientific=TRUE, digit=2)
-FigS5C$bl_p.val <- format(FigS5C$bl_p.val, scientific=TRUE, digit=2)
-FigS5C$mrs_p.val <- format(FigS5C$mrs_p.val, scientific=TRUE, digit=2)
-FigS5C$ss_p.val <- format(FigS5C$ss_p.val, scientific=TRUE, digit=2)
-FigS5C$ws_p.val <- format(FigS5C$ws_p.val, scientific=TRUE, digit=2)
+FigS6C$bl_coef <- round(FigS6C$bl_coef,3)
+FigS6C$mrs_coef <- round(FigS6C$mrs_coef,3)
+FigS6C$ss_coef <- round(FigS6C$ss_coef,3)
+FigS6C$ws_coef <- round(FigS6C$ws_coef,3)
+FigS6C$bl_fdr <- format(FigS6C$bl_fdr, scientific=TRUE, digit=2)
+FigS6C$mrs_fdr <- format(FigS6C$mrs_fdr, scientific=TRUE, digit=2)
+FigS6C$ss_fdr <- format(FigS6C$ss_fdr, scientific=TRUE, digit=2)
+FigS6C$ws_fdr <- format(FigS6C$ws_fdr, scientific=TRUE, digit=2)
+FigS6C$bl_p.val <- format(FigS6C$bl_p.val, scientific=TRUE, digit=2)
+FigS6C$mrs_p.val <- format(FigS6C$mrs_p.val, scientific=TRUE, digit=2)
+FigS6C$ss_p.val <- format(FigS6C$ss_p.val, scientific=TRUE, digit=2)
+FigS6C$ws_p.val <- format(FigS6C$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
-FigS5C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+FigS6C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
 # Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS5C$bl_lower <- round(FigS5C$bl_lower,3)
-FigS5C$mrs_lower <- round(FigS5C$mrs_lower,3)
-FigS5C$ss_lower <- round(FigS5C$ss_lower,3)
-FigS5C$ws_lower <- round(FigS5C$ws_lower,3)
-FigS5C$bl_upper <- round(FigS5C$bl_upper,3)
-FigS5C$mrs_upper <- round(FigS5C$mrs_upper,3)
-FigS5C$ss_upper <- round(FigS5C$ss_upper,3)
-FigS5C$ws_upper <- round(FigS5C$ws_upper,3)
+FigS6C$bl_lower <- round(FigS6C$bl_lower,3)
+FigS6C$mrs_lower <- round(FigS6C$mrs_lower,3)
+FigS6C$ss_lower <- round(FigS6C$ss_lower,3)
+FigS6C$ws_lower <- round(FigS6C$ws_lower,3)
+FigS6C$bl_upper <- round(FigS6C$bl_upper,3)
+FigS6C$mrs_upper <- round(FigS6C$mrs_upper,3)
+FigS6C$ss_upper <- round(FigS6C$ss_upper,3)
+FigS6C$ws_upper <- round(FigS6C$ws_upper,3)
 
-FigS5C$CI <- paste(sprintf("(%.2f, %.2f)", FigS5C$bl_lower, FigS5C$bl_upper),
-               sprintf("(%.2f, %.2f)", FigS5C$mrs_lower, FigS5C$mrs_upper),
-                sprintf("(%.2f, %.2f)", FigS5C$ss_lower, FigS5C$ss_upper),
-               sprintf("(%.2f, %.2f)", FigS5C$ws_lower, FigS5C$ws_upper),
+FigS6C$CI <- paste(sprintf("(%.2f, %.2f)", FigS6C$bl_lower, FigS6C$bl_upper),
+               sprintf("(%.2f, %.2f)", FigS6C$mrs_lower, FigS6C$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS6C$ss_lower, FigS6C$ss_upper),
+               sprintf("(%.2f, %.2f)", FigS6C$ws_lower, FigS6C$ws_upper),
                 sep = "\n")
-FigS5C$Beta <- paste(sprintf("%.2f", FigS5C$bl_coef),
-                sprintf("%.2f", FigS5C$mrs_coef),
-                sprintf("%.2f", FigS5C$ss_coef),
-                sprintf("%.2f", FigS5C$ws_coef),
+FigS6C$Beta <- paste(sprintf("%.2f", FigS6C$bl_coef),
+                sprintf("%.2f", FigS6C$mrs_coef),
+                sprintf("%.2f", FigS6C$ss_coef),
+                sprintf("%.2f", FigS6C$ws_coef),
                 sep = "\n")
-FigS5C$q.val <- paste(FigS5C$bl_fdr, FigS5C$mrs_fdr, FigS5C$ss_fdr, FigS5C$ws_fdr,sep = "\n")
-FigS5C$p.val <- paste(FigS5C$bl_p.val, FigS5C$mrs_p.val, FigS5C$ss_p.val, FigS5C$ws_p.val, sep = "\n")
-FigS5C$Sample.size <- paste(FigS5C$bl_s.size, FigS5C$mrs_s.size, FigS5C$ss_s.size, 
-                            FigS5C$ws_s.size,sep = "\n")
+FigS6C$q.val <- paste(FigS6C$bl_fdr, FigS6C$mrs_fdr, FigS6C$ss_fdr, FigS6C$ws_fdr,sep = "\n")
+FigS6C$p.val <- paste(FigS6C$bl_p.val, FigS6C$mrs_p.val, FigS6C$ss_p.val, FigS6C$ws_p.val, sep = "\n")
+FigS6C$Sample.size <- paste(FigS6C$bl_s.size, FigS6C$mrs_s.size, FigS6C$ss_s.size, 
+                            FigS6C$ws_s.size,sep = "\n")
 
-FigS5C$CI[grepl("NA", FigS5C$CI)] <- "" # Any NA to blank
-FigS5C$Beta[grepl("NA", FigS5C$Beta)] <- "" # Any NA to blank
-FigS5C$q.val[grepl("NA", FigS5C$q.val)]<- ""
-FigS5C$p.val[grepl("NA", FigS5C$p.val)]<- ""
-FigS5C$Sample.size[grepl("NA", FigS5C$Sample.size)] <- ""
-names(FigS5C)[24] <- 'Odds Ratio'
+FigS6C$CI[grepl("NA", FigS6C$CI)] <- "" # Any NA to blank
+FigS6C$Beta[grepl("NA", FigS6C$Beta)] <- "" # Any NA to blank
+FigS6C$q.val[grepl("NA", FigS6C$q.val)]<- ""
+FigS6C$p.val[grepl("NA", FigS6C$p.val)]<- ""
+FigS6C$Sample.size[grepl("NA", FigS6C$Sample.size)] <- ""
+names(FigS6C)[24] <- 'Odds Ratio'
 
 #################### plot
-names(FigS5C)[27] <- '95%CI'
-plot <- forest(FigS5C[,c(1,28,27,30,29,31,26)], #
-            est = list(FigS5C$bl_coef,
-                       FigS5C$mrs_coef,
-                       FigS5C$ss_coef,
-                       FigS5C$ws_coef),
-            lower = list(FigS5C$bl_lower,
-                       FigS5C$mrs_lower,
-                         FigS5C$ss_lower,
-                        FigS5C$ws_lower), 
-            upper = list(FigS5C$bl_upper,
-                      FigS5C$mrs_upper,
-                         FigS5C$ss_upper,
-                        FigS5C$ws_upper),
+names(FigS6C)[27] <- '95%CI'
+plot <- forest(FigS6C[,c(1,28,27,30,29,31,26)], #
+            est = list(FigS6C$bl_coef,
+                       FigS6C$mrs_coef,
+                       FigS6C$ss_coef,
+                       FigS6C$ws_coef),
+            lower = list(FigS6C$bl_lower,
+                       FigS6C$mrs_lower,
+                         FigS6C$ss_lower,
+                        FigS6C$ws_lower), 
+            upper = list(FigS6C$bl_upper,
+                      FigS6C$mrs_upper,
+                         FigS6C$ss_upper,
+                        FigS6C$ws_upper),
             ci_column = 7,
             ref_line = 1, 
             theme = tm)
