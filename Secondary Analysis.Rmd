@@ -460,11 +460,15 @@ sdata<-merge(sdata,ev5[,c(2,5:9)],by='SOL_ID')
 sdata<-sdata[complete.cases(sdata$SLPDUR),]
 sdata<-sdata[complete.cases(sdata$EV1),]
 sdata<-sdata[complete.cases(sdata$BMI),]
+
+sdata.all <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240604_phen_all.csv')
+sdata.all<-sdata.all[complete.cases(sdata.all$SLPDUR),]
+sdata.all<-sdata.all[complete.cases(sdata.all$BMI),]
 ```
 
 ### Fit model
 ```{r}
-####### Blood CRP
+####### MRS CRP
 mrs_gam <- mgcv::gam(Zmrs_HEnet ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
 summary(mrs_gam)
 
@@ -475,14 +479,22 @@ preds_df <- data.frame(SLPDUR = sdata$SLPDUR,
                        upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
 #write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv',row.names = F)
 
-bld_gam <- mgcv::gam(lgCrp ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+bld_gam <- mgcv::gam(lgCrp ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7, data=sdata)
 summary(bld_gam)
 preds.all <- predict(bld_gam, newdata = sdata, type = 'terms', se.fit = TRUE)
 preds_df <- data.frame(SLPDUR = sdata$SLPDUR, 
-                       fit = preds.all$fit[,11], 
-                       lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
-                       upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
-#write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv',row.names = F)
+                       fit = preds.all$fit[,6], 
+                       lwr = preds.all$fit[,6] - 1.96 * preds.all$se.fit[,6], 
+                       upr = preds.all$fit[,6] + 1.96 * preds.all$se.fit[,6])
+
+bld_gam.all <- mgcv::gam(lgCrp ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7, data=sdata.all)
+summary(bld_gam.all)
+preds.all <- predict(bld_gam.all, newdata = sdata.all, type = 'terms', se.fit = TRUE)
+preds_df.all <- data.frame(SLPDUR = sdata.all$SLPDUR, 
+                       fit = preds.all$fit[,6], 
+                       lwr = preds.all$fit[,6] - 1.96 * preds.all$se.fit[,6], 
+                       upr = preds.all$fit[,6] + 1.96 * preds.all$se.fit[,6])
+#write.csv(preds_df.all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline_all.csv',row.names = F)
 ```
 
 

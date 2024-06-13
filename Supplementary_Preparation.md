@@ -804,10 +804,19 @@ ggplot()  +
 ![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
+### Figure S5B
 preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv')
-ggplot()  +
-  geom_line(data = preds_df, aes(x = SLPDUR, y = fit), color = "blue", size = 1) +
-  geom_ribbon(data = preds_df, aes(x = SLPDUR, ymin = lwr, ymax = upr), alpha = 0.2, fill = "blue") +
+preds_df$group <- "Same as MRS-CRP model"
+
+preds_df.all <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline_all.csv')
+preds_df.all$group <- "All samples"
+combined_df <- rbind(preds_df, preds_df.all)
+
+ggplot() +
+  geom_line(data = combined_df, aes(x = SLPDUR, y = fit, color = group), size = 1) +
+  geom_ribbon(data = combined_df, aes(x = SLPDUR, ymin = lwr, ymax = upr, fill = group), alpha = 0.2) +
+  scale_color_manual(values = c("red", "blue"), name = "Sample size") +
+  scale_fill_manual(values = c("red", "blue"), name = "Sample size") +
   labs(title = "Cubic Spline Fit with GAM (k=3)",
        x = "Sleep Duration",
        y = "Blood CRP") +
