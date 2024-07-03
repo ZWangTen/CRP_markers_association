@@ -85,7 +85,7 @@ kable(Tab.S1, row.names = FALSE)
 
 ``` r
 # Read data
-rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
 rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240523_PRS_CRP.csv')
 pl <- rbind(rmrs,rprs)
 
@@ -150,12 +150,12 @@ grid.arrange(tab,mid,ncol=2)
 ## Data Preparation
 
 ``` r
-rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
 rmrs1 <- rmrs1[1:14,]
 rmrs1$fdr <- p.adjust(rmrs1$p.val,method='fdr')
 rmrs1$pheno[c(8:9)] <- c('cog_global', 'cog_change')
 rmrs1$group <- 'Model 1'
-rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240514_MRSCRP_mod2.csv')
+rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MRSCRP_mod2.csv')
 rmrs2 <- rmrs2[1:14,]
 rmrs2$fdr <- p.adjust(rmrs2$p.val,method='fdr')
 rmrs2$pheno[c(8:9)] <- c('cog_global', 'cog_change')
@@ -402,7 +402,7 @@ plot
 ## Fig S3A
 
 ``` r
-womrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_wo.csv')
+womrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_wo.csv')
 
 # Figure S3A
 pnum <- womrs
@@ -511,7 +511,7 @@ plot
 ## Fig S3B
 
 ``` r
-wmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_w.csv')
+wmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_w.csv')
 
 # Figure S3B
 pnum <- wmrs
@@ -622,14 +622,14 @@ plot
 ## Data Preparation
 
 ``` r
-woprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+woprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
 wo.num <- subset(woprs, pheno%in%c('lgCrp','SLPA54','SLPA91','SLPA92') & group %in% 'MRS_CRP')
 wo.cat <- subset(woprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
            & group%in%'MRS_CRP')
 wo.num$mod<-'1' # without adjusting for PRS
 wo.cat$mod<-'1'
 
-wprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240524_wprs.csv')
+wprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_wprs.csv')
 w.num <- subset(wprs, pheno%in%c('lgCrp','SLPA54','SLPA91','SLPA92'))
 w.cat <- subset(wprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp'))
 w.num$mod <- '2' # adjusting for PRS
@@ -791,7 +791,7 @@ plot
 
 ``` r
 ### Figure S5A
-preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv')
+preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_mrs_spline.csv')
 ggplot()  +
   geom_line(data = preds_df, aes(x = SLPDUR, y = fit), color = "blue", size = 1) +
   geom_ribbon(data = preds_df, aes(x = SLPDUR, ymin = lwr, ymax = upr), alpha = 0.2, fill = "blue") +
@@ -808,7 +808,7 @@ ggplot()  +
 preds_df <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline.csv')
 preds_df$group <- "Same as MRS-CRP model"
 
-preds_df.all <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline_all.csv')
+preds_df.all <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_blood_spline_all.csv')
 preds_df.all$group <- "All samples"
 combined_df <- rbind(preds_df, preds_df.all)
 
@@ -819,7 +819,7 @@ ggplot() +
   scale_fill_manual(values = c("red", "blue"), name = "Sample size") +
   labs(title = "Cubic Spline Fit with GAM (k=3)",
        x = "Sleep Duration",
-       y = "Blood CRP") +
+       y = "log(Blood CRP)") +
   theme_minimal()
 ```
 
@@ -1174,6 +1174,258 @@ plot
 
 ![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
+# Create Figure S7
+
+## Data Preparation
+
+``` r
+rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
+rmrs1 <- rmrs1[1:14,]
+rmrs1$fdr <- p.adjust(rmrs1$p.val,method='fdr')
+rmrs1$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs1$group <- 'Model 1'
+rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240701_MRS_cell.csv')
+rmrs2 <- rmrs2[1:14,]
+rmrs2$fdr <- p.adjust(rmrs2$p.val,method='fdr')
+rmrs2$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs2$group <- 'Sensitivity analysis'
+
+pl <- rbind(rmrs1,rmrs2)
+pl <- pl[order(pl$pheno),]
+row.names(pl) <- 1:nrow(pl)
+FigS7A <- pl[c(17:24),]
+FigS7B <- pl[c(1:4, 7:8, 11:12, 25:28),]
+FigS7C <- pl[c(5:6, 9:10, 13:16),]
+FigS7C$coef <- exp(FigS7C$coef)
+FigS7C$lower <- exp(FigS7C$lower)
+FigS7C$upper <- exp(FigS7C$upper)
+```
+
+## Fig S7A
+
+``` r
+row.names(FigS7A) <- 1:nrow(FigS7A)
+sub <- split(FigS7A, FigS7A$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
+names(m1)<-paste0('m1_', names(m1))
+m2 <- sub[[2]]%>% dplyr::select(-c(group)) 
+names(m2) <- paste0('m2_',names(m2))
+
+FigS7A <- cbind(m1, m2) %>% dplyr::select(-c(m2_pheno))
+names(FigS7A)[1] <- 'Phenotype'
+
+FigS7A <- rbind(FigS7A,data.frame(Phenotype=c('Obstructive Sleep Apnea'),
+                           m1_coef=rep(NA,1), m1_p.val=rep(NA,1), m1_lower=rep(NA,1), 
+                           m1_upper=rep(NA,1), m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
+                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1), m2_lower=rep(NA,1), m2_upper=rep(NA,1)))
+FigS7A <- FigS7A[c(5,1:4),]
+row.names(FigS7A) <- 1:nrow(FigS7A)
+FigS7A$Phenotype[c(2:5)] <- c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+FigS7A$Phenotype <- ifelse(is.na(FigS7A$m1_coef), 
+                      FigS7A$Phenotype,
+                      paste0("   ", FigS7A$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+FigS7A$m1_coef<-round(FigS7A$m1_coef,3)
+FigS7A$m2_coef<-round(FigS7A$m2_coef,3)
+FigS7A$m1_p.val<-format(FigS7A$m1_p.val, scientific=TRUE, digits=2)
+FigS7A$m2_p.val<-format(FigS7A$m2_p.val, scientific=TRUE, digits=2)
+FigS7A$m1_fdr <- format(FigS7A$m1_fdr, scientific=TRUE, digit=2)
+FigS7A$m2_fdr <- format(FigS7A$m2_fdr, scientific=TRUE, digit=2)
+
+# Add two blank columns for CI
+FigS7A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS7A$m1_lower <- round(FigS7A$m1_lower,3)
+FigS7A$m2_lower <- round(FigS7A$m2_lower,3)
+FigS7A$m1_upper <- round(FigS7A$m1_upper,4)
+FigS7A$m2_upper <- round(FigS7A$m2_upper,3)
+
+FigS7A$CI <- paste(sprintf("(%.2f, %.2f)", FigS7A$m1_lower, FigS7A$m1_upper), 
+                sprintf("(%.2f, %.2f)", FigS7A$m2_lower, FigS7A$m2_upper), 
+                sep = "\n")
+FigS7A$Beta <- paste(sprintf("%.2f", FigS7A$m1_coef),
+                sprintf("%.2f", FigS7A$m2_coef),
+                sep = "\n")
+FigS7A$p.val <- paste(FigS7A$m1_p.val, FigS7A$m2_p.val,
+                sep = "\n")
+FigS7A$q.val <- paste(FigS7A$m1_fdr, FigS7A$m2_fdr, sep = "\n")
+
+FigS7A$CI[grepl("NA", FigS7A$CI)] <- "" # Any NA to blank
+FigS7A$Beta[grepl("NA", FigS7A$Beta)] <- "" # Any NA to blank
+FigS7A$p.val[grepl("NA", FigS7A$p.val)] <- "" # Any NA to blank
+FigS7A$q.val[grepl("NA", FigS7A$q.val)] <- "" # Any NA to blank
+
+#################### plot
+# Set-up theme
+tm <- forest_theme(base_size = 8,
+                   refline_lty = "solid",
+                   ci_pch = c(15, 18),
+                   ci_col = c( "#AF0040","#377eb8"),
+                   footnote_gp = gpar(col = "blue"),
+                   legend_name = "Model",
+                   legend_value = c("Model 1", "Sensitivity analysis" ),
+                   vertline_lty = c("dashed", "dotted"),
+                   vertline_col = c("#d6604d", "#bababa"),
+                   # Table cell padding, width 4 and heights 3
+                   )
+#> refline_lty will be deprecated, use refline_gp instead.
+names(FigS7A)[13]<-'95%CI'
+plot <- forest(FigS7A[,c(1,14,15,16,13,12)], 
+            est = list(FigS7A$m1_coef,
+                       FigS7A$m2_coef),
+            lower = list(FigS7A$m1_lower,
+                         FigS7A$m2_lower),
+            upper = list(FigS7A$m1_upper,
+                         FigS7A$m2_upper),
+            ci_column = 6,
+            ref_line = 0, 
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+## Fig S7B
+
+``` r
+row.names(FigS7B) <- 1:nrow(FigS7B)
+sub <- split(FigS7B, FigS7B$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
+names(m1) <- paste0('m1_', names(m1))
+m2 <- sub[[2]]%>% dplyr::select(-c(group))
+names(m2) <- paste0('m2_', names(m2))
+FigS7B <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
+names(FigS7B)[1] <- 'Phenotype'
+
+FigS7B <- rbind(FigS7B, data.frame(Phenotype=c('Cognitive Function','Other phenotypes'),
+                           m1_coef=rep(NA,2),m1_p.val=rep(NA,2), m1_lower=rep(NA,2),
+                           m1_upper=rep(NA,2), m1_fdr=rep(NA,2), m2_fdr=rep(NA,2),
+                           m2_coef=rep(NA,2), m2_p.val=rep(NA,2),m2_lower=rep(NA,2),m2_upper=rep(NA,2) ))
+FigS7B <- FigS7B[c(7,1:2, 8,3:6),]
+row.names(FigS7B) <- 1:nrow(FigS7B)
+FigS7B$Phenotype[c(2,3,7)] <- c('Change', 'Baseline', 'Sleep Duration')
+FigS7B$Phenotype <- ifelse(is.na(FigS7B$m1_coef), 
+                      FigS7B$Phenotype,
+                      paste0("   ", FigS7B$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+FigS7B$m1_coef<-round(FigS7B$m1_coef,3)
+FigS7B$m2_coef<-round(FigS7B$m2_coef,3)
+FigS7B$m1_p.val<-format(FigS7B$m1_p.val, scientific=TRUE, digits=2)
+FigS7B$m2_p.val<-format(FigS7B$m2_p.val, scientific=TRUE, digits=2)
+FigS7B$m1_fdr <- format(FigS7B$m1_fdr, scientific=TRUE, digit=2)
+FigS7B$m2_fdr <- format(FigS7B$m2_fdr, scientific=TRUE, digit=2)
+
+# Add two m1ank columns for CI
+FigS7B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS7B$m1_lower <- round(FigS7B$m1_lower,3)
+FigS7B$m2_lower <- round(FigS7B$m2_lower,3)
+FigS7B$m1_upper <- round(FigS7B$m1_upper,3)
+FigS7B$m2_upper <- round(FigS7B$m2_upper,3)
+
+FigS7B$CI <- paste(sprintf("(%.2f, %.2f)", FigS7B$m1_lower, FigS7B$m1_upper),
+                sprintf("(%.2f, %.2f)", FigS7B$m2_lower, FigS7B$m2_upper),
+                sep = "\n")
+FigS7B$Beta <- paste(sprintf("%.2f", FigS7B$m1_coef),
+                sprintf("%.2f", FigS7B$m2_coef),
+                sep = "\n")
+FigS7B$p.val <- paste( FigS7B$m1_p.val, FigS7B$m2_p.val,
+                sep = "\n")
+FigS7B$q.val <- paste(FigS7B$m1_fdr, FigS7B$m2_fdr, sep = "\n")
+
+FigS7B$CI[grepl("NA", FigS7B$CI)] <- "" # Any NA to blank
+FigS7B$Beta[grepl("NA", FigS7B$Beta)] <- "" # Any NA to blank
+FigS7B$p.val[grepl("NA", FigS7B$p.val)]<- ""
+FigS7B$q.val[grepl("NA", FigS7B$q.val)] <- "" # Any NA to blank
+
+#################### plot
+names(FigS7B)[13] <- '95%CI'
+plot <- forest(FigS7B[,c(1,14,15,16,13,12)], 
+            est = list(FigS7B$m1_coef,
+                       FigS7B$m2_coef),
+            lower = list(FigS7B$m1_lower,
+                         FigS7B$m2_lower),
+            upper = list(FigS7B$m1_upper,
+                         FigS7B$m2_upper),
+            ci_column = 6,
+            ref_line = 0, 
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+## Fig S7C
+
+``` r
+row.names(FigS7C) <- 1:nrow(FigS7C)
+sub <- split(FigS7C, FigS7C$group) 
+m1 <- sub[[1]] %>% dplyr::select(-c(group))
+names(m1) <- paste0('m1_', names(m1))
+m2 <- sub[[2]]%>% dplyr::select(-c(group))
+names(m2) <- paste0('m2_', names(m2))
+FigS7C <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
+names(FigS7C)[1] <- 'Phenotype'
+
+FigS7C <- rbind(FigS7C, data.frame(Phenotype=c('Other phenotypes'),
+                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),
+                           m1_upper=rep(NA,1),m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
+                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
+FigS7C <- FigS7C[c(5,1:4),]
+row.names(FigS7C) <- 1:nrow(FigS7C)
+FigS7C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
+FigS7C$Phenotype <- ifelse(is.na(FigS7C$m1_coef), 
+                      FigS7C$Phenotype,
+                      paste0("   ", FigS7C$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+FigS7C$m1_coef<-round(FigS7C$m1_coef,3)
+FigS7C$m2_coef<-round(FigS7C$m2_coef,3)
+FigS7C$m1_p.val<-format(FigS7C$m1_p.val, scientific=TRUE, digits=2)
+FigS7C$m2_p.val<-format(FigS7C$m2_p.val, scientific=TRUE, digits=2)
+FigS7C$m1_fdr <- format(FigS7C$m1_fdr, scientific=TRUE, digit=2)
+FigS7C$m2_fdr <- format(FigS7C$m2_fdr, scientific=TRUE, digit=2)
+
+# Add two m1ank columns for CI
+FigS7C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+FigS7C$m1_lower <- round(FigS7C$m1_lower,3)
+FigS7C$m2_lower <- round(FigS7C$m2_lower,3)
+FigS7C$m1_upper <- round(FigS7C$m1_upper,3)
+FigS7C$m2_upper <- round(FigS7C$m2_upper,3)
+
+FigS7C$CI <- paste(sprintf("(%.2f, %.2f)", FigS7C$m1_lower, FigS7C$m1_upper),
+                sprintf("(%.2f, %.2f)", FigS7C$m2_lower, FigS7C$m2_upper),
+                sep = "\n")
+FigS7C$Beta <- paste(sprintf("%.2f", FigS7C$m1_coef),
+                sprintf("%.2f", FigS7C$m2_coef),
+                sep = "\n")
+FigS7C$p.val <- paste(FigS7C$m1_p.val, FigS7C$m2_p.val,
+                sep = "\n")
+FigS7C$q.val <- paste(FigS7C$m1_fdr, FigS7C$m2_fdr, sep = "\n")
+
+FigS7C$CI[grepl("NA", FigS7C$CI)] <- "" # Any NA to blank
+FigS7C$Beta[grepl("NA", FigS7C$Beta)] <- "" # Any NA to blank
+FigS7C$p.val[grepl("NA", FigS7C$p.val)]<- ""
+FigS7C$q.val[grepl("NA", FigS7C$q.val)]<- ""
+
+#################### plot
+names(FigS7C)[13] <- '95%CI'
+names(FigS7C)[14] <- 'Odds Ratio'
+plot <- forest(FigS7C[,c(1,14,15,16,13,12)], 
+            est = list(FigS7C$m1_coef,
+                       FigS7C$m2_coef),
+            lower = list(FigS7C$m1_lower,
+                         FigS7C$m2_lower),
+            upper = list(FigS7C$m1_upper,
+                         FigS7C$m2_upper),
+            ci_column = 6,
+            ref_line = 1, 
+            theme = tm)
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
 # Create Supplementary Table S6
 
 Creation of table S3-S4 please refer to PRS_selection.Rmd
@@ -1211,10 +1463,10 @@ kable(Tab.S6, row.names = F)
 ## Read Data
 
 ``` r
-ahi <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_AHI.csv')
-minO2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_MinO2.csv')
-diab <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_Diab.csv')
-hyp <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_hyper.csv')
+ahi <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_AHI.csv')
+minO2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_MinO2.csv')
+diab <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_Diab.csv')
+hyp <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_hyper.csv')
 tab2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table2.csv')
 ```
 
@@ -1228,18 +1480,18 @@ Tab.S7$coef_AHI <- round(Tab.S7$coef_AHI, 2)
 Tab.S7$Phenotypes <- gsub("AHI", "", Tab.S7$Phenotypes)
 Tab.S7$Phenotypes <- gsub("imum", " ", Tab.S7$Phenotypes)
 names(Tab.S7)[2:5] <- c('Coefficient', 'CHR', 'Gene Name', 'Overlap') 
-write.csv(Tab.S7, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S7.csv', row.names = FALSE)
+#write.csv(Tab.S7, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S7.csv', row.names = FALSE)
 kable(head(Tab.S7), row.names = FALSE)
 ```
 
-| CpG        | Coefficient | CHR | Gene Name   | Overlap            |
-|:-----------|------------:|----:|:------------|:-------------------|
-| cg00574958 |       -3.70 |  11 | CPT1A;CPT1A | Min SpO2, Diabetes |
-| cg08309687 |       -5.93 |  21 |             | Min SpO2, Diabetes |
-| cg00816397 |       62.83 |   1 | PFDN2;NIT1  | Min SpO2           |
-| cg04103088 |       -4.98 |   4 |             | Min SpO2           |
-| cg09048665 |       -0.90 |  16 | WDR90       | Min SpO2           |
-| cg10726559 |      -24.91 |  14 | MIR127;RTL1 | Min SpO2           |
+| CpG        | Coefficient | CHR | Gene Name   | Overlap                |
+|:-----------|------------:|----:|:------------|:-----------------------|
+| cg00574958 |       -0.39 |  11 | CPT1A;CPT1A | Min SpO2, Diabetes     |
+| cg14476101 |       -0.67 |   1 | PHGDH       | Min SpO2, Hypertension |
+| cg03246954 |       84.11 |  19 | MKNK2;MKNK2 | Min SpO2               |
+| cg14656297 |       -8.73 |   9 | FXN;FXN;FXN | Min SpO2               |
+| cg23281327 |       -2.98 |  10 |             | Min SpO2               |
+| cg23440058 |       -1.16 |   3 | KALRN;KALRN | Min SpO2               |
 
 ## Table S8
 
@@ -1251,18 +1503,18 @@ Tab.S8$coef_MinSpO2 <- round(Tab.S8$coef_MinSpO2, 2)
 Tab.S8$Phenotypes <- gsub("MinimumSpO2", "", Tab.S8$Phenotypes)
 Tab.S8$Phenotypes <- gsub(",", "", Tab.S8$Phenotypes)
 names(Tab.S8)[2:5] <- c('Coefficient', 'CHR', 'Gene Name', 'Overlap') 
-write.csv(Tab.S8, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S8.csv', row.names = FALSE)
+#write.csv(Tab.S8, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S8.csv', row.names = FALSE)
 kable(head(Tab.S8), row.names = FALSE)
 ```
 
-| CpG        | Coefficient | CHR | Gene Name   | Overlap      |
-|:-----------|------------:|----:|:------------|:-------------|
-| cg00574958 |        4.41 |  11 | CPT1A;CPT1A | AHI Diabetes |
-| cg08309687 |        0.58 |  21 |             | AHI Diabetes |
-| cg00816397 |      -61.31 |   1 | PFDN2;NIT1  | AHI          |
-| cg04103088 |        0.02 |   4 |             | AHI          |
-| cg09048665 |        4.56 |  16 | WDR90       | AHI          |
-| cg10726559 |        5.64 |  14 | MIR127;RTL1 | AHI          |
+| CpG        | Coefficient | CHR | Gene Name   | Overlap          |
+|:-----------|------------:|----:|:------------|:-----------------|
+| cg00574958 |        0.08 |  11 | CPT1A;CPT1A | AHI Diabetes     |
+| cg14476101 |        0.00 |   1 | PHGDH       | AHI Hypertension |
+| cg03246954 |       -0.22 |  19 | MKNK2;MKNK2 | AHI              |
+| cg14656297 |        0.08 |   9 | FXN;FXN;FXN | AHI              |
+| cg23281327 |        0.15 |  10 |             | AHI              |
+| cg23440058 |        0.05 |   3 | KALRN;KALRN | AHI              |
 
 ## Table S9
 
@@ -1285,15 +1537,15 @@ names(Tab.hyp)[3:6] <- c('Coefficient', 'CHR', 'Gene Name', 'Overlap')
 
 Tab.S9 <- rbind(Tab.diab, Tab.hyp)
 
-write.csv(Tab.S9, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S9.csv', row.names = FALSE)
+#write.csv(Tab.S9, '~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Draft/Tables and Figures/Table_S9.csv', row.names = FALSE)
 kable(tail(Tab.S9), row.names = FALSE)
 ```
 
-| CpG        | Trait        | Coefficient | CHR | Gene Name   | Overlap      |
-|:-----------|:-------------|------------:|----:|:------------|:-------------|
-| cg18852857 | Diabetes     |        0.08 |  22 | ADRBK2      | AHI          |
-| cg11607604 | Diabetes     |       -3.72 |  13 | FARP1;FARP1 | MinimumSpO2, |
-| cg12450708 | Diabetes     |        0.05 |  10 |             | MinimumSpO2, |
-| cg06690548 | Hypertension |       -0.79 |   4 | SLC7A11     | AHI          |
-| cg17061862 | Hypertension |       -0.01 |  11 |             | AHI          |
-| cg14476101 | Hypertension |       -0.31 |   1 | PHGDH       | MinimumSpO2, |
+| CpG        | Trait        | Coefficient | CHR | Gene Name   | Overlap            |
+|:-----------|:-------------|------------:|----:|:------------|:-------------------|
+| cg00574958 | Diabetes     |      -13.54 |  11 | CPT1A;CPT1A | AHI MinimumSpO2,   |
+| cg19693031 | Diabetes     |       -9.79 |   1 | TXNIP       | AHI , Hypertension |
+| cg00572560 | Diabetes     |        0.39 |  10 |             | AHI                |
+| cg14476101 | Hypertension |       -0.03 |   1 | PHGDH       | AHI MinimumSpO2,   |
+| cg19693031 | Hypertension |       -0.11 |   1 | TXNIP       | AHI Diabetes,      |
+| cg06690548 | Hypertension |       -0.26 |   4 | SLC7A11     | AHI                |

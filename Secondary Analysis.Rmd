@@ -24,12 +24,13 @@ library(mgcv)
 ### Data preparation
 ```{r}
 # Read data
-pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
-ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
-names(ev5)[2]<-'SOL_ID'
+pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
 
 # Add genetic PCs
-pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+#ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+#names(ev5)[2]<-'SOL_ID'
+#pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+
 # Set reference level for diabetes and hypertension
 pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
 pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
@@ -100,7 +101,7 @@ for (i in 1:3){
   } 
 cc <- tab %>% mutate(condition='cog_change')
 res <- rbind(diab,hyp,cg,cc)
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_wo.csv',row.names = F)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_wo.csv',row.names = F)
 ```
 
 ### Association after adjusting for MRS_CRP
@@ -112,7 +113,7 @@ tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -126,7 +127,7 @@ tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -140,7 +141,7 @@ tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -154,7 +155,7 @@ tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -163,7 +164,7 @@ for (i in 1:3){
   } 
 cc <- tab %>% mutate(condition='cog_change')
 res <- rbind(diab,hyp,cg,cc)
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_w.csv',row.names = F)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_w.csv',row.names = F)
 ```
 
 ## Association between MRS-CRP with phenotypes adjusting for PRS-CRP
@@ -172,12 +173,12 @@ res <- rbind(diab,hyp,cg,cc)
 ```{r}
 # Read data
 scsx <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240523_SOL_PRS_CSx.csv')
-pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
-ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
-names(ev5)[2]<-'SOL_ID'
-
+pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
 # Add genetic PCs
-pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+#ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+#names(ev5)[2]<-'SOL_ID'
+#pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+
 # Classify long and short sleep duration
 pheno <- merge(pheno, scsx[,c(1,12,13)], by='SOL_ID')
 pheno$cDur <- ifelse(pheno$SLPDUR>9, 'Long', ifelse(pheno$SLPDUR<6, 'Short', 'Norm'))
@@ -202,7 +203,7 @@ tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92',
 
 for (i in 1:7 ){
   if (i<5){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + wsum_all  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + wsum_all  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -210,7 +211,7 @@ for (i in 1:7 ){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i %in% 5:6){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -218,7 +219,7 @@ for (i in 1:7 ){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i ==7 ) {
-    form <- as.formula(paste0('cDur', paste('~ Zmrs_HEnet + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -227,21 +228,22 @@ for (i in 1:7 ){
   }
 }
 wprs <- tab %>% mutate(group='wPRS')
-#write.csv(wprs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240524_wprs.csv',row.names = F)
+#write.csv(wprs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_wprs.csv',row.names = F)
 ```
 
 ## Lasso feature selection
 
 ### Read Data
 ```{r}
-load('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/enet.RData')
+d<-readRDS('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/Enet_corrected.rds')
+d <- d %>% remove_rownames() %>% column_to_rownames('CpG') %>% select(-CHR)
+d <- as.data.frame(t(d))
 chr_all <- read.csv("~/OneDrive - Beth Israel Lahey Health/2023_parquet_db_methylation/Data/infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip=7)
 names(chr_all)[2]<-'CpG'
 phe <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
 ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
 names(ev5)[2]<-'SOL_ID'
 phe <- merge(phe, ev5[,c(2,5:9)],by='SOL_ID')
-#26-S92, 24-S54, 25-S91, 15-diab, 9-hyper
 # 96-S54, 60-61 s91-92 94-hyper 38-diab
 ```
 
@@ -254,6 +256,8 @@ p2$BKGRD1_C7 <- as.character(p2$BKGRD1_C7)
 p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
 p2 <- cbind(p2[,c(3,5:17)], dummy(p2))
 p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$SLPA54<-ifelse(p2$SLPA54>15,'sOsa','mOnorm')
+#p2$SLPA54<-log(p2$SLPA54+1)
 p2$Row_names <- row.names(p2)
 d$Row_names <- row.names(d)
 data <- merge(p2, d, by='Row_names') 
@@ -272,11 +276,12 @@ p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) # intercept and cell compone
 
 y <- data[,'SLPA54']
 
+
 # Cross validation
 set.seed(1997)
 kcvlasso <- cv.glmnet(x, y, nfolds = 5,
-                      type.measure = "deviance",
-                      penalty.factor = p.fac)
+                      family='binomial',type.measure = "class",
+                      penalty.factor = p.fac) #family='binomial',type.measure = "class",
 
 ind_min <- which.min(kcvlasso$cvm)
 selected_lambda <- kcvlasso$lambda[ind_min]
@@ -285,7 +290,7 @@ selected_lambda <- kcvlasso$lambda[ind_min]
 set.seed(1997)
 lasso <- glmnet(x, y,
                 lambda = selected_lambda,
-                type.measure = "deviance", 
+                family='binomial',type.measure = "class", 
                 penalty.factor = p.fac)
 lasso_beta <- lasso$beta
 mrs_coefs <- lasso_beta[grep("cg", rownames(lasso_beta)), "s0"]
@@ -304,6 +309,7 @@ p2$BKGRD1_C7 <- as.character(p2$BKGRD1_C7)
 p2 <- p2 %>% remove_rownames %>% column_to_rownames('Row_names')
 p2 <- cbind(p2[,c(3,5:17)], dummy(p2))
 p2 <- p2 %>% mutate_if(is.character, as.numeric)
+p2$SLPA91<-log(p2$SLPA91)
 p2$Row_names <- row.names(p2)
 d$Row_names <- row.names(d)
 data <- merge(p2, d, by='Row_names') 
@@ -453,10 +459,10 @@ nrow(Hyper)
 
 ### Data preparation
 ```{r}
-sdata <- read_csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
-ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
-names(ev5)[2] <- 'SOL_ID'
-sdata<-merge(sdata,ev5[,c(2,5:9)],by='SOL_ID')
+sdata <- read_csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
+#ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+#names(ev5)[2] <- 'SOL_ID'
+#sdata<-merge(sdata,ev5[,c(2,5:9)],by='SOL_ID')
 sdata<-sdata[complete.cases(sdata$SLPDUR),]
 sdata<-sdata[complete.cases(sdata$EV1),]
 sdata<-sdata[complete.cases(sdata$BMI),]
@@ -469,7 +475,7 @@ sdata.all<-sdata.all[complete.cases(sdata.all$BMI),]
 ### Fit model
 ```{r}
 ####### MRS CRP
-mrs_gam <- mgcv::gam(Zmrs_HEnet ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+mrs_gam <- mgcv::gam(Zmrs_corrected ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
 summary(mrs_gam)
 
 preds.all <- predict(mrs_gam, newdata = sdata, type = 'terms', se.fit = TRUE)
@@ -477,7 +483,7 @@ preds_df <- data.frame(SLPDUR = sdata$SLPDUR,
                        fit = preds.all$fit[,11], 
                        lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
                        upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
-#write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv',row.names = F)
+#write.csv(preds_df,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_mrs_spline.csv',row.names = F)
 
 bld_gam <- mgcv::gam(lgCrp ~ s(SLPDUR,bs='cr', k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7, data=sdata)
 summary(bld_gam)
@@ -494,7 +500,7 @@ preds_df.all <- data.frame(SLPDUR = sdata.all$SLPDUR,
                        fit = preds.all$fit[,6], 
                        lwr = preds.all$fit[,6] - 1.96 * preds.all$se.fit[,6], 
                        upr = preds.all$fit[,6] + 1.96 * preds.all$se.fit[,6])
-#write.csv(preds_df.all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline_all.csv',row.names = F)
+#write.csv(preds_df.all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_blood_spline_all.csv',row.names = F)
 ```
 
 
@@ -853,3 +859,68 @@ res$s.size[40:42] <- nrow(dt[complete.cases(dt$WHIIRS),])
 ```
 
 
+
+
+## Sensitivity analysis - Adjust for cell types 
+```{r}
+# Read data
+pheno<- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
+pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
+pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+
+long <- subset(pheno, cDur%in%c('Long','Norm'))
+long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
+short <- subset(pheno, cDur%in%c('Short','Norm'))
+short$cDur <- relevel(as.factor(short$cDur), ref = 'Norm')
+
+# Create survey objects
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pheno)
+survey_obj <- subset(survey_obj,  !is.na(lgCrp))
+survey_long <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long <- subset(survey_long,  !is.na(lgCrp))
+survey_short <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=short)
+survey_short <- subset(survey_short,  !is.na(lgCrp))
+
+
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
+                          'global_cog_score', 'global_cog_score_change', 'ESS',
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
+                  coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
+
+
+for (i in 1:14){
+  if (i<11){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono'))) #Zmrs_HEnet
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 11:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+mrs <- tab %>% mutate(group='MRS_CRP')
+
+#write.csv(mrs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240701_MRS_cell.csv',row.names = F)
+
+
+```

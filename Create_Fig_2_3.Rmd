@@ -17,7 +17,7 @@ library(gridExtra)
 # Create figure 2
 ```{r}
 # Read data
-rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
 rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240523_PRS_CRP.csv')
 rprs <- rprs[c(1:28),]
 pl <- rbind(rmrs,rprs)
@@ -76,7 +76,7 @@ grid.arrange(tab,mid,ncol=2)
 # Create Figure 3
 ```{r}
 # Data preparation
-rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240513_crp_surveyPC.csv')
+rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
 rmrs$fdr <- 1
 rmrs$fdr[1:14] <- p.adjust(rmrs[1:14,]$p.val,method='fdr')
 rmrs$fdr[15:27] <- p.adjust(rmrs[15:27,]$p.val,method='fdr')

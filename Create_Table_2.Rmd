@@ -15,10 +15,10 @@ library(stringi)
 ```{r}
 chr_all <- read.csv("~/OneDrive - Beth Israel Lahey Health/2023_parquet_db_methylation/Data/infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip=7)
 names(chr_all)[2]<-'CpG'
-S54 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_AHI.csv')
-diab <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_Diab.csv')
-S91 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_MinO2.csv')
-hyper <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240514_Enet_hyper.csv')
+S54 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_AHI.csv')
+diab <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_Diab.csv')
+S91 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_MinO2.csv')
+hyper <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Lasso_EWAS/20240701_Enet_hyper.csv')
 S54$SLPA54<-'AHI'
 diab$Diabetes<-'Diabetes'
 hyper$Hypertension<-'Hypertension'

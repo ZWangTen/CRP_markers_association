@@ -9,12 +9,13 @@ Leslie (ZW)
 
 ``` r
 # Read data
-pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv')
-ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
-names(ev5)[2]<-'SOL_ID'
+pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
 
 # Add genetic PCs
-pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+#ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
+#names(ev5)[2]<-'SOL_ID'
+#pheno <- merge(pheno, ev5[,c(2,5:9)],by='SOL_ID')
+
 # Classify long and short sleep duration
 pheno$cDur <- ifelse(pheno$SLPDUR>9, 'Long', ifelse(pheno$SLPDUR<6, 'Short', 'Norm'))
 long <- subset(pheno, cDur%in%c('Long','Norm'))
@@ -44,7 +45,7 @@ tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPD
 
 for (i in 1:14){
   if (i<11){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -52,7 +53,7 @@ for (i in 1:14){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i %in% 11:12){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -60,7 +61,7 @@ for (i in 1:14){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i %in% 13:14) {
-    form <- as.formula(paste0('cDur', paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     if (i==13){
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
     } else {
@@ -115,6 +116,8 @@ for (i in 1:13){
 }
 crp <- tab %>% mutate(group='Blood_CRP')
 res <- rbind(mrs, crp)
+
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv',row.names = F)
 ```
 
 ## Association analysis for PRS_CRP
@@ -276,7 +279,7 @@ tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPD
 
 for (i in 1:14){
   if (i<11){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5'))) 
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5'))) 
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -285,9 +288,9 @@ for (i in 1:14){
   }
   if (i %in% 11:12){
     if (i==11){
-      form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
+      form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
     } else {
-      form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + EV1 + EV2 + EV3 + EV4 + EV5')))
+      form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + EV1 + EV2 + EV3 + EV4 + EV5')))
     }
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -296,7 +299,7 @@ for (i in 1:14){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i %in% 13:14){
-    form <- as.formula(paste0('cDur', paste('~ Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + DIABETES2_INDICATOR + HYPERTENSION + EV1 + EV2 + EV3 + EV4 + EV5')))
     if (i==13){
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
     } else {
@@ -355,5 +358,5 @@ for (i in 1:13){
 }
 crp <- tab %>% mutate(group='Blood_CRP')
 res <- rbind(mrs, crp)
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240514_MRSCRP_mod2.csv',row.names = FALSE)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MRSCRP_mod2.csv',row.names = FALSE)
 ```

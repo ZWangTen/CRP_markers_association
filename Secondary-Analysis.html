@@ -364,12 +364,13 @@ display: none;
 <div id="data-preparation" class="section level3">
 <h3>Data preparation</h3>
 <pre class="r"><code># Read data
-pheno &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv&#39;)
-ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
-names(ev5)[2]&lt;-&#39;SOL_ID&#39;
+pheno &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv&#39;)
 
 # Add genetic PCs
-pheno &lt;- merge(pheno, ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+#ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
+#names(ev5)[2]&lt;-&#39;SOL_ID&#39;
+#pheno &lt;- merge(pheno, ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+
 # Set reference level for diabetes and hypertension
 pheno$DIABETES2_INDICATOR &lt;-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = &#39;Normal&#39; )
 pheno$HYPERTENSION &lt;-relevel(as.factor(pheno$HYPERTENSION), ref = &#39;Normal&#39; )
@@ -438,7 +439,7 @@ for (i in 1:3){
   } 
 cc &lt;- tab %&gt;% mutate(condition=&#39;cog_change&#39;)
 res &lt;- rbind(diab,hyp,cg,cc)
-#write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_wo.csv&#39;,row.names = F)</code></pre>
+#write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_wo.csv&#39;,row.names = F)</code></pre>
 </div>
 <div id="association-after-adjusting-for-mrs_crp" class="section level3">
 <h3>Association after adjusting for MRS_CRP</h3>
@@ -449,7 +450,7 @@ tab &lt;- data.frame(pheno=c(&#39;SLPA54&#39;,&#39;SLPA91&#39;,&#39;SLPA92&#39;)
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ DIABETES2_INDICATOR + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ DIABETES2_INDICATOR + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
     mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -463,7 +464,7 @@ tab &lt;- data.frame(pheno=c(&#39;SLPA54&#39;,&#39;SLPA91&#39;,&#39;SLPA92&#39;)
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ HYPERTENSION + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ HYPERTENSION + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
     mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -477,7 +478,7 @@ tab &lt;- data.frame(pheno=c(&#39;SLPA54&#39;,&#39;SLPA91&#39;,&#39;SLPA92&#39;)
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ global_cog_score + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ global_cog_score + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
     mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -491,7 +492,7 @@ tab &lt;- data.frame(pheno=c(&#39;SLPA54&#39;,&#39;SLPA91&#39;,&#39;SLPA92&#39;)
                   coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
 
 for (i in 1:3){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ global_cog_score_change + Zmrs_HEnet + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ global_cog_score_change + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
     mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -500,7 +501,7 @@ for (i in 1:3){
   } 
 cc &lt;- tab %&gt;% mutate(condition=&#39;cog_change&#39;)
 res &lt;- rbind(diab,hyp,cg,cc)
-#write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240517_slp_dis_w.csv&#39;,row.names = F)</code></pre>
+#write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_w.csv&#39;,row.names = F)</code></pre>
 </div>
 </div>
 <div id="association-between-mrs-crp-with-phenotypes-adjusting-for-prs-crp" class="section level2">
@@ -510,12 +511,12 @@ PRS-CRP</h2>
 <h3>Data preparation</h3>
 <pre class="r"><code># Read data
 scsx &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240523_SOL_PRS_CSx.csv&#39;)
-pheno &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv&#39;)
-ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
-names(ev5)[2]&lt;-&#39;SOL_ID&#39;
-
+pheno &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv&#39;)
 # Add genetic PCs
-pheno &lt;- merge(pheno, ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+#ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
+#names(ev5)[2]&lt;-&#39;SOL_ID&#39;
+#pheno &lt;- merge(pheno, ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+
 # Classify long and short sleep duration
 pheno &lt;- merge(pheno, scsx[,c(1,12,13)], by=&#39;SOL_ID&#39;)
 pheno$cDur &lt;- ifelse(pheno$SLPDUR&gt;9, &#39;Long&#39;, ifelse(pheno$SLPDUR&lt;6, &#39;Short&#39;, &#39;Norm&#39;))
@@ -539,7 +540,7 @@ survey_long &lt;- subset(survey_long,  !is.na(lgCrp))</code></pre>
 
 for (i in 1:7 ){
   if (i&lt;5){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_HEnet + wsum_all  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_corrected + wsum_all  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;))) #Zmrs_HEnet
     mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -547,7 +548,7 @@ for (i in 1:7 ){
     tab$upper[i] &lt;- confint(mod)[2,2]
   }
   if (i %in% 5:6){
-    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_HEnet + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
     mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -555,7 +556,7 @@ for (i in 1:7 ){
     tab$upper[i] &lt;- confint(mod)[2,2]
   }
   if (i ==7 ) {
-    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ Zmrs_HEnet + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5&#39;)))
     mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
     tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
     tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
@@ -564,21 +565,22 @@ for (i in 1:7 ){
   }
 }
 wprs &lt;- tab %&gt;% mutate(group=&#39;wPRS&#39;)
-#write.csv(wprs,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240524_wprs.csv&#39;,row.names = F)</code></pre>
+#write.csv(wprs,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_wprs.csv&#39;,row.names = F)</code></pre>
 </div>
 </div>
 <div id="lasso-feature-selection" class="section level2">
 <h2>Lasso feature selection</h2>
 <div id="read-data" class="section level3">
 <h3>Read Data</h3>
-<pre class="r"><code>load(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/enet.RData&#39;)
+<pre class="r"><code>d&lt;-readRDS(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/Enet_corrected.rds&#39;)
+d &lt;- d %&gt;% remove_rownames() %&gt;% column_to_rownames(&#39;CpG&#39;) %&gt;% select(-CHR)
+d &lt;- as.data.frame(t(d))
 chr_all &lt;- read.csv(&quot;~/OneDrive - Beth Israel Lahey Health/2023_parquet_db_methylation/Data/infinium-methylationepic-v-1-0-b5-manifest-file.csv&quot;,skip=7)
 names(chr_all)[2]&lt;-&#39;CpG&#39;
 phe &lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv&#39;)
 ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
 names(ev5)[2]&lt;-&#39;SOL_ID&#39;
 phe &lt;- merge(phe, ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
-#26-S92, 24-S54, 25-S91, 15-diab, 9-hyper
 # 96-S54, 60-61 s91-92 94-hyper 38-diab</code></pre>
 </div>
 <div id="ahi-slpa54" class="section level3">
@@ -590,6 +592,8 @@ p2$BKGRD1_C7 &lt;- as.character(p2$BKGRD1_C7)
 p2 &lt;- p2 %&gt;% remove_rownames %&gt;% column_to_rownames(&#39;Row_names&#39;)
 p2 &lt;- cbind(p2[,c(3,5:17)], dummy(p2))
 p2 &lt;- p2 %&gt;% mutate_if(is.character, as.numeric)
+p2$SLPA54&lt;-ifelse(p2$SLPA54&gt;15,&#39;sOsa&#39;,&#39;mOnorm&#39;)
+#p2$SLPA54&lt;-log(p2$SLPA54+1)
 p2$Row_names &lt;- row.names(p2)
 d$Row_names &lt;- row.names(d)
 data &lt;- merge(p2, d, by=&#39;Row_names&#39;) 
@@ -608,11 +612,12 @@ p.fac = c(rep(0, ncol(x) - n_chem), rep(1, n_chem)) # intercept and cell compone
 
 y &lt;- data[,&#39;SLPA54&#39;]
 
+
 # Cross validation
 set.seed(1997)
 kcvlasso &lt;- cv.glmnet(x, y, nfolds = 5,
-                      type.measure = &quot;deviance&quot;,
-                      penalty.factor = p.fac)
+                      family=&#39;binomial&#39;,type.measure = &quot;class&quot;,
+                      penalty.factor = p.fac) #family=&#39;binomial&#39;,type.measure = &quot;class&quot;,
 
 ind_min &lt;- which.min(kcvlasso$cvm)
 selected_lambda &lt;- kcvlasso$lambda[ind_min]
@@ -621,7 +626,7 @@ selected_lambda &lt;- kcvlasso$lambda[ind_min]
 set.seed(1997)
 lasso &lt;- glmnet(x, y,
                 lambda = selected_lambda,
-                type.measure = &quot;deviance&quot;, 
+                family=&#39;binomial&#39;,type.measure = &quot;class&quot;, 
                 penalty.factor = p.fac)
 lasso_beta &lt;- lasso$beta
 mrs_coefs &lt;- lasso_beta[grep(&quot;cg&quot;, rownames(lasso_beta)), &quot;s0&quot;]
@@ -630,7 +635,7 @@ names(mrs_coefs) &lt;- &#39;coef_AHI&#39;
 mrs_coefs$CpG &lt;- row.names(mrs_coefs)
 AHI &lt;- merge(mrs_coefs,chr_all[,c(2,12,16)],by=&#39;CpG&#39;)
 nrow(AHI)</code></pre>
-<pre><code>## [1] 34</code></pre>
+<pre><code>## [1] 66</code></pre>
 </div>
 <div id="minimum-spo2-slpa91" class="section level3">
 <h3>Minimum SpO2 (SLPA91)</h3>
@@ -640,6 +645,7 @@ p2$BKGRD1_C7 &lt;- as.character(p2$BKGRD1_C7)
 p2 &lt;- p2 %&gt;% remove_rownames %&gt;% column_to_rownames(&#39;Row_names&#39;)
 p2 &lt;- cbind(p2[,c(3,5:17)], dummy(p2))
 p2 &lt;- p2 %&gt;% mutate_if(is.character, as.numeric)
+p2$SLPA91&lt;-log(p2$SLPA91)
 p2$Row_names &lt;- row.names(p2)
 d$Row_names &lt;- row.names(d)
 data &lt;- merge(p2, d, by=&#39;Row_names&#39;) 
@@ -680,7 +686,7 @@ names(mrs_coefs) &lt;- &#39;coef_MinSpO2&#39;
 mrs_coefs$CpG &lt;- row.names(mrs_coefs)
 minO2 &lt;- merge(mrs_coefs,chr_all[,c(2,12,16)],by=&#39;CpG&#39;)
 nrow(minO2)</code></pre>
-<pre><code>## [1] 1</code></pre>
+<pre><code>## [1] 12</code></pre>
 </div>
 <div id="diabetes" class="section level3">
 <h3>Diabetes</h3>
@@ -732,7 +738,7 @@ mrs_coefs$CpG &lt;- row.names(mrs_coefs)
 names(chr_all)[2]&lt;-&#39;CpG&#39;
 diab &lt;- merge(mrs_coefs,chr_all[,c(2,12,16)],by=&#39;CpG&#39;)
 nrow(diab)</code></pre>
-<pre><code>## [1] 87</code></pre>
+<pre><code>## [1] 55</code></pre>
 </div>
 <div id="hypertension" class="section level3">
 <h3>Hypertension</h3>
@@ -783,29 +789,29 @@ names(mrs_coefs) &lt;- &#39;coef_hyper&#39;
 mrs_coefs$CpG &lt;- row.names(mrs_coefs)
 Hyper &lt;- merge(mrs_coefs,chr_all[,c(2,12,16)],by=&#39;CpG&#39;)
 nrow(Hyper)</code></pre>
-<pre><code>## [1] 14</code></pre>
+<pre><code>## [1] 6</code></pre>
 </div>
 </div>
 <div id="cubic-spline-model" class="section level2">
 <h2>Cubic Spline Model</h2>
 <div id="data-preparation-2" class="section level3">
 <h3>Data preparation</h3>
-<pre class="r"><code>sdata &lt;- read_csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240205_pheSol.csv&#39;)</code></pre>
+<pre class="r"><code>sdata &lt;- read_csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv&#39;)</code></pre>
 <pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
 ## e.g.:
 ##   dat &lt;- vroom(...)
 ##   problems(dat)</code></pre>
-<pre><code>## Rows: 2696 Columns: 138
+<pre><code>## Rows: 2221 Columns: 148
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
-## chr  (20): Row_names, SOL_ID, CENTER, GENDER, INSULIN_FAST, SEVLT_RECALL, DI...
-## dbl (118): ID, HEIGHT, PSU_ID, WEIGHT_FINAL_NORM_OVERALL, AGE, AGG_PHYS, AGG...
+## chr  (22): Row_names, SOL_ID, CENTER, GENDER, SEVLT_RECALL, DIABETES2_INDICA...
+## dbl (126): ID, HEIGHT, PSU_ID, WEIGHT_FINAL_NORM_OVERALL, AGE, AGG_PHYS, AGG...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
-names(ev5)[2] &lt;- &#39;SOL_ID&#39;
-sdata&lt;-merge(sdata,ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
+<pre class="r"><code>#ev5 &lt;- read.csv(&quot;/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv&quot;)
+#names(ev5)[2] &lt;- &#39;SOL_ID&#39;
+#sdata&lt;-merge(sdata,ev5[,c(2,5:9)],by=&#39;SOL_ID&#39;)
 sdata&lt;-sdata[complete.cases(sdata$SLPDUR),]
 sdata&lt;-sdata[complete.cases(sdata$EV1),]
 sdata&lt;-sdata[complete.cases(sdata$BMI),]
@@ -817,72 +823,72 @@ sdata.all&lt;-sdata.all[complete.cases(sdata.all$BMI),]</code></pre>
 <div id="fit-model" class="section level3">
 <h3>Fit model</h3>
 <pre class="r"><code>####### MRS CRP
-mrs_gam &lt;- mgcv::gam(Zmrs_HEnet ~ s(SLPDUR,bs=&#39;cr&#39;, k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
+mrs_gam &lt;- mgcv::gam(Zmrs_corrected ~ s(SLPDUR,bs=&#39;cr&#39;, k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5, data=sdata)
 summary(mrs_gam)</code></pre>
 <pre><code>## 
 ## Family: gaussian 
 ## Link function: identity 
 ## 
 ## Formula:
-## Zmrs_HEnet ~ s(SLPDUR, bs = &quot;cr&quot;, k = 3) + AGE + GENDER + BMI + 
-##     CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5
+## Zmrs_corrected ~ s(SLPDUR, bs = &quot;cr&quot;, k = 3) + AGE + GENDER + 
+##     BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5
 ## 
 ## Parametric coefficients:
 ##                                         Estimate Std. Error t value Pr(&gt;|t|)
-## (Intercept)                            -1.301266   0.227359  -5.723 1.19e-08
-## AGE                                    -0.009756   0.002635  -3.703 0.000219
-## GENDERMale                             -0.063055   0.042072  -1.499 0.134091
-## BMI                                     0.064895   0.003568  18.186  &lt; 2e-16
-## CENTERChicago                          -0.145163   0.077039  -1.884 0.059664
-## CENTERMiami                             0.068893   0.096824   0.712 0.476835
-## CENTERSan Diego                        -0.158008   0.098875  -1.598 0.110179
-## BKGRD1_C7Cuban                         -0.042973   0.137127  -0.313 0.754024
-## BKGRD1_C7Domician                      -0.179156   0.145122  -1.235 0.217146
-## BKGRD1_C7Mexican                       -0.115960   0.155661  -0.745 0.456382
-## BKGRD1_C7More than one/Other heritage  -0.014825   0.188066  -0.079 0.937175
-## BKGRD1_C7Puerto Rican                   0.039435   0.173153   0.228 0.819865
-## BKGRD1_C7South American                 0.224665   0.130459   1.722 0.085197
-## EV1                                    -8.154252   4.760522  -1.713 0.086880
-## EV2                                    -2.693626   2.462788  -1.094 0.274198
-## EV3                                    -4.541089   4.890751  -0.929 0.353252
-## EV4                                   -12.230375   4.619285  -2.648 0.008165
-## EV5                                    -9.051425   3.333394  -2.715 0.006674
+## (Intercept)                            -1.120506   0.225686  -4.965 7.43e-07
+## AGE                                    -0.011632   0.002615  -4.448 9.13e-06
+## GENDERMale                             -0.115874   0.041758  -2.775  0.00557
+## BMI                                     0.064300   0.003542  18.154  &lt; 2e-16
+## CENTERChicago                          -0.135111   0.076466  -1.767  0.07738
+## CENTERMiami                             0.089094   0.096102   0.927  0.35399
+## CENTERSan Diego                        -0.118494   0.098140  -1.207  0.22741
+## BKGRD1_C7Cuban                         -0.122726   0.136106  -0.902  0.36732
+## BKGRD1_C7Domician                      -0.237036   0.144041  -1.646  0.09999
+## BKGRD1_C7Mexican                       -0.171838   0.154501  -1.112  0.26617
+## BKGRD1_C7More than one/Other heritage  -0.095755   0.186675  -0.513  0.60804
+## BKGRD1_C7Puerto Rican                  -0.035069   0.171871  -0.204  0.83834
+## BKGRD1_C7South American                 0.183291   0.129487   1.416  0.15706
+## EV1                                    -9.693256   4.725025  -2.051  0.04034
+## EV2                                    -1.351048   2.444429  -0.553  0.58052
+## EV3                                    -4.915665   4.854300  -1.013  0.31135
+## EV4                                   -13.689105   4.584856  -2.986  0.00286
+## EV5                                    -6.693049   3.308558  -2.023  0.04320
 ##                                          
 ## (Intercept)                           ***
 ## AGE                                   ***
-## GENDERMale                               
+## GENDERMale                            ** 
 ## BMI                                   ***
 ## CENTERChicago                         .  
 ## CENTERMiami                              
 ## CENTERSan Diego                          
 ## BKGRD1_C7Cuban                           
-## BKGRD1_C7Domician                        
+## BKGRD1_C7Domician                     .  
 ## BKGRD1_C7Mexican                         
 ## BKGRD1_C7More than one/Other heritage    
 ## BKGRD1_C7Puerto Rican                    
-## BKGRD1_C7South American               .  
-## EV1                                   .  
+## BKGRD1_C7South American                  
+## EV1                                   *  
 ## EV2                                      
 ## EV3                                      
 ## EV4                                   ** 
-## EV5                                   ** 
+## EV5                                   *  
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Approximate significance of smooth terms:
 ##             edf Ref.df     F p-value  
-## s(SLPDUR) 1.748  1.936 3.437  0.0211 *
+## s(SLPDUR) 1.798  1.959 3.798  0.0151 *
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## R-sq.(adj) =  0.182   Deviance explained =   19%
-## GCV = 0.82829  Scale est. = 0.82061   n = 2130</code></pre>
+## R-sq.(adj) =  0.185   Deviance explained = 19.3%
+## GCV =  0.816  Scale est. = 0.80842   n = 2130</code></pre>
 <pre class="r"><code>preds.all &lt;- predict(mrs_gam, newdata = sdata, type = &#39;terms&#39;, se.fit = TRUE)
 preds_df &lt;- data.frame(SLPDUR = sdata$SLPDUR, 
                        fit = preds.all$fit[,11], 
                        lwr = preds.all$fit[,11] - 1.96 * preds.all$se.fit[,11], 
                        upr = preds.all$fit[,11] + 1.96 * preds.all$se.fit[,11])
-#write.csv(preds_df,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_mrs_spline.csv&#39;,row.names = F)
+#write.csv(preds_df,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_mrs_spline.csv&#39;,row.names = F)
 
 bld_gam &lt;- mgcv::gam(lgCrp ~ s(SLPDUR,bs=&#39;cr&#39;, k=3) +AGE + GENDER + BMI + CENTER + BKGRD1_C7, data=sdata)
 summary(bld_gam)</code></pre>
@@ -995,7 +1001,7 @@ preds_df.all &lt;- data.frame(SLPDUR = sdata.all$SLPDUR,
                        fit = preds.all$fit[,6], 
                        lwr = preds.all$fit[,6] - 1.96 * preds.all$se.fit[,6], 
                        upr = preds.all$fit[,6] + 1.96 * preds.all$se.fit[,6])
-#write.csv(preds_df.all,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240610_blood_spline_all.csv&#39;,row.names = F)</code></pre>
+#write.csv(preds_df.all,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240629_blood_spline_all.csv&#39;,row.names = F)</code></pre>
 </div>
 </div>
 <div id="osa-with-and-without-eds" class="section level2">
@@ -1356,6 +1362,67 @@ res$s.size[37:39] &lt;- nrow(dt[complete.cases(dt$SLPDUR),])
 res$s.size[40:42] &lt;- nrow(dt[complete.cases(dt$WHIIRS),])
 #write.csv(res,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_PRS_all.csv&#39;,row.names = F)</code></pre>
 </div>
+</div>
+<div id="sensitivity-analysis---adjust-for-cell-types" class="section level2">
+<h2>Sensitivity analysis - Adjust for cell types</h2>
+<pre class="r"><code># Read data
+pheno&lt;- read.csv(&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv&#39;)
+pheno$DIABETES2_INDICATOR &lt;-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = &#39;Normal&#39; )
+pheno$HYPERTENSION &lt;-relevel(as.factor(pheno$HYPERTENSION), ref = &#39;Normal&#39; )
+
+long &lt;- subset(pheno, cDur%in%c(&#39;Long&#39;,&#39;Norm&#39;))
+long$cDur &lt;- relevel(as.factor(long$cDur), ref = &#39;Norm&#39;)
+short &lt;- subset(pheno, cDur%in%c(&#39;Short&#39;,&#39;Norm&#39;))
+short$cDur &lt;- relevel(as.factor(short$cDur), ref = &#39;Norm&#39;)
+
+# Create survey objects
+survey_obj &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pheno)
+survey_obj &lt;- subset(survey_obj,  !is.na(lgCrp))
+survey_long &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long &lt;- subset(survey_long,  !is.na(lgCrp))
+survey_short &lt;- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=short)
+survey_short &lt;- subset(survey_short,  !is.na(lgCrp))
+
+
+tab &lt;- data.frame(pheno=c(&#39;lgCrp&#39;, &#39;SLPA54&#39;, &#39;SLPA91&#39;, &#39;SLPA92&#39;, &#39;SLPA97&#39;, &#39;SLPDUR&#39;, &#39;WHIIRS&#39;,
+                          &#39;global_cog_score&#39;, &#39;global_cog_score_change&#39;, &#39;ESS&#39;,
+                          &#39;DIABETES2_INDICATOR&#39;, &#39;HYPERTENSION&#39;, &#39;LongSlp&#39;, &#39;ShortSlp&#39;),
+                  coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
+
+
+for (i in 1:14){
+  if (i&lt;11){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono&#39;))) #Zmrs_HEnet
+    mod &lt;- svyglm(form, design = survey_obj, family = &quot;gaussian&quot;)
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 11:12){
+    form &lt;- as.formula(paste0(tab$pheno[i], paste(&#39;~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono&#39;)))
+    mod &lt;- svyglm(form, design = survey_obj, family = quasibinomial(link = &quot;logit&quot;))
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form &lt;- as.formula(paste0(&#39;cDur&#39;, paste(&#39;~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono&#39;)))
+    if (i==13){
+    mod &lt;- svyglm(form, design = survey_long, family = quasibinomial(link = &quot;logit&quot;))
+    } else {
+      mod &lt;- svyglm(form, design = survey_short, family = quasibinomial(link = &quot;logit&quot;))
+    }
+    tab$coef[i] &lt;- summary(mod)$coefficients[2,1]
+    tab$p.val[i] &lt;- summary(mod)$coefficients[2,4]
+    tab$lower[i] &lt;- confint(mod)[2,1]
+    tab$upper[i] &lt;- confint(mod)[2,2]
+  }
+}
+mrs &lt;- tab %&gt;% mutate(group=&#39;MRS_CRP&#39;)
+
+#write.csv(mrs,&#39;~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240701_MRS_cell.csv&#39;,row.names = F)</code></pre>
 </div>
 </div>
 
