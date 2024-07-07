@@ -25,7 +25,6 @@ library(mgcv)
 ```{r}
 # Read data
 pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
-
 # Add genetic PCs
 #ev5 <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries/subject_annotation_2017-09-05.csv")
 #names(ev5)[2]<-'SOL_ID'
@@ -34,11 +33,15 @@ pheno <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240
 # Set reference level for diabetes and hypertension
 pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
 pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+pheno$Insomnia <-relevel(as.factor(pheno$Insomnia), ref = 'Norm' )
+long <- subset(pheno, cDur%in%c('Long','Norm'))
+long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
 
 # Create survey objects
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL, data=pheno)
 survey_obj <- subset(survey_obj,  !is.na(lgCrp))
-
+survey_long <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long <- subset(survey_long,  !is.na(lgCrp))
 ```
 
 ### Association without adjusting for MRS-CRP
@@ -46,12 +49,19 @@ survey_obj <- subset(survey_obj,  !is.na(lgCrp))
 ############## Sleep ~ diseases
 
 # Diabetes
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92','Insomnia','LongSlp'),
+                  coef=rep(1,5), p.val=rep(1,5),lower=rep(1,5),upper=rep(1,5))
 
-for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+for (i in 1:5){
+  form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5')))
+   if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+  } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ DIABETES2_INDICATOR + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -60,12 +70,16 @@ for (i in 1:3){
 diab <- tab %>% mutate(condition='Diabetes')
 
 # Hypertension
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+for (i in 1:5){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5')))
+   if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+   } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ HYPERTENSION + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -74,12 +88,16 @@ for (i in 1:3){
 hyp <- tab %>% mutate(condition='Hypertension')
 
 # Cognitive score baseline
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ global_cog_score + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -88,12 +106,16 @@ for (i in 1:3){
 cg <- tab %>% mutate(condition='cog_baseline')
 
 # Cognitive score change
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ global_cog_score_change + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -101,7 +123,7 @@ for (i in 1:3){
   } 
 cc <- tab %>% mutate(condition='cog_change')
 res <- rbind(diab,hyp,cg,cc)
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_wo.csv',row.names = F)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_slp_dis_wo.csv',row.names = F)
 ```
 
 ### Association after adjusting for MRS_CRP
@@ -109,12 +131,19 @@ res <- rbind(diab,hyp,cg,cc)
 ############## Sleep ~ diseases
 
 # Diabetes
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
+tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92','Insomnia','LongSlp'),
+                  coef=rep(1,5), p.val=rep(1,5),lower=rep(1,5),upper=rep(1,5))
 
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ DIABETES2_INDICATOR + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ DIABETES2_INDICATOR + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -123,12 +152,16 @@ for (i in 1:3){
 diab <- tab %>% mutate(condition='Diabetes')
 
 # Hypertension
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ HYPERTENSION + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+   if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+   } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ HYPERTENSION + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -137,12 +170,16 @@ for (i in 1:3){
 hyp <- tab %>% mutate(condition='Hypertension')
 
 # Cognitive score baseline
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ global_cog_score + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -151,12 +188,16 @@ for (i in 1:3){
 cg <- tab %>% mutate(condition='cog_baseline')
 
 # Cognitive score change
-tab <- data.frame(pheno=c('SLPA54','SLPA91','SLPA92'),
-                  coef=rep(1,3), p.val=rep(1,3),lower=rep(1,3),upper=rep(1,3))
-
-for (i in 1:3){
+for (i in 1:5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ global_cog_score_change + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
+    if (i<4){
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    } else if (i==4) {
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+  } else {
+    form <- as.formula(paste0('cDur', paste('~ global_cog_score_change + Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+  }
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
@@ -164,7 +205,7 @@ for (i in 1:3){
   } 
 cc <- tab %>% mutate(condition='cog_change')
 res <- rbind(diab,hyp,cg,cc)
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_w.csv',row.names = F)
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_slp_dis_w.csv',row.names = F)
 ```
 
 ## Association between MRS-CRP with phenotypes adjusting for PRS-CRP
@@ -187,6 +228,7 @@ long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
 # Set reference level for diabetes and hypertension
 pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
 pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+pheno$Insomnia <-relevel(as.factor(pheno$Insomnia), ref = 'Norm' )
 
 # Create survey objects
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pheno)
@@ -197,11 +239,11 @@ survey_long <- subset(survey_long,  !is.na(lgCrp))
 
 ### Adjusting for PRS-CRP
 ```{r}
-tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'Insomnia',
                           'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp'),
-                  coef=rep(1,7), p.val=rep(1,7), lower=rep(1,7), upper=rep(1,7))
+                  coef=rep(1,8), p.val=rep(1,8), lower=rep(1,8), upper=rep(1,8))
 
-for (i in 1:7 ){
+for (i in 1:8 ){
   if (i<5){
     form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + wsum_all  + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
@@ -210,7 +252,7 @@ for (i in 1:7 ){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 5:6){
+  if (i %in% 5:7){
     form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -218,7 +260,7 @@ for (i in 1:7 ){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i ==7 ) {
+  if (i ==8 ) {
     form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -228,7 +270,7 @@ for (i in 1:7 ){
   }
 }
 wprs <- tab %>% mutate(group='wPRS')
-#write.csv(wprs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_wprs.csv',row.names = F)
+#write.csv(wprs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_wprs.csv',row.names = F)
 ```
 
 ## Lasso feature selection
@@ -236,7 +278,8 @@ wprs <- tab %>% mutate(group='wPRS')
 ### Read Data
 ```{r}
 d<-readRDS('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/Lasso data/Enet_corrected.rds')
-d <- d %>% remove_rownames() %>% column_to_rownames('CpG') %>% select(-CHR)
+d <- d %>% remove_rownames() %>% column_to_rownames('CpG') 
+d <- d[,-2701]
 d <- as.data.frame(t(d))
 chr_all <- read.csv("~/OneDrive - Beth Israel Lahey Health/2023_parquet_db_methylation/Data/infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip=7)
 names(chr_all)[2]<-'CpG'
@@ -647,6 +690,10 @@ phen <- merge(phen, cog[,c(2,3,5)], by='ID')
 sdata <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240604_phen_all.csv')
 sdata$DIABETES2_INDICATOR <-relevel(as.factor(sdata$DIABETES2_INDICATOR), ref = 'Normal' )
 sdata$HYPERTENSION <-relevel(as.factor(sdata$HYPERTENSION), ref = 'Normal' )
+sdata$EDS <- ifelse(sdata$ESS>10, 'EDS', 'Norm')
+sdata$Insomnia <- ifelse(sdata$WHIIRS<10, 'Norm', 'Insomnia')
+sdata$EDS <-relevel(as.factor(sdata$EDS), ref = 'Norm' )
+sdata$Insomnia <-relevel(as.factor(sdata$Insomnia), ref = 'Norm' )
 long <- subset(sdata, cDur%in%c('Long','Norm'))
 long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
 short <- subset(sdata, cDur%in%c('Short','Norm'))
@@ -662,13 +709,13 @@ survey_short <- subset(survey_short,  !is.na(lgCrp))
 
 ### Blood CRP association
 ```{r}
-tab <- data.frame(pheno=c('SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
-                          'global_cog_score', 'global_cog_score_change', 'ESS',
+tab <- data.frame(pheno=c('SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 
+                          'global_cog_score', 'global_cog_score_change', 'EDS','Insomnia',
                           'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
                   coef=rep(1,13), p.val=rep(1,13), lower=rep(1,13), upper=rep(1,13))
 
 for (i in 1:13){
-  if (i<10){
+  if (i<8){
     form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7'))) 
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -676,7 +723,7 @@ for (i in 1:13){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 10:11){
+  if (i %in% 8:11){
     form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + BMI + CENTER + BKGRD1_C7')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -703,15 +750,15 @@ dt <- sdata[complete.cases(sdata$lgCrp),]
 crp$s.size[1] <- nrow(dt[complete.cases(dt$SLPA54),])
 crp$s.size[2:4] <- nrow(dt[complete.cases(dt$SLPA91),])
 crp$s.size[5] <- nrow(dt[complete.cases(dt$SLPDUR),])
-crp$s.size[6] <- nrow(dt[complete.cases(dt$WHIIRS),])
-crp$s.size[7] <- nrow(dt[complete.cases(dt$global_cog_score),])
-crp$s.size[8] <- nrow(dt[complete.cases(dt$global_cog_score_change),])
-crp$s.size[9] <- nrow(dt[complete.cases(dt$ESS),])
+crp$s.size[9] <- nrow(dt[complete.cases(dt$WHIIRS),])
+crp$s.size[6] <- nrow(dt[complete.cases(dt$global_cog_score),])
+crp$s.size[7] <- nrow(dt[complete.cases(dt$global_cog_score_change),])
+crp$s.size[8] <- nrow(dt[complete.cases(dt$ESS),])
 crp$s.size[10:11] <- nrow(dt[complete.cases(dt$DIABETES2_INDICATOR),])
 crp$s.size[12] <- nrow(long[complete.cases(long$lgCrp),])
 crp$s.size[13] <- nrow(short[complete.cases(short$lgCrp),])
 
-#write.csv(crp,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_lgCRP_all.csv',row.names = F)
+#write.csv(crp,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_lgCRP_all.csv',row.names = F)
 ```
 
 ### PRS CRP association
@@ -725,8 +772,8 @@ long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
 short <- subset(pdata, cDur%in%c('Short','Norm'))
 short$cDur <- relevel(as.factor(short$cDur), ref = 'Norm')
 
-tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
-                          'global_cog_score', 'global_cog_score_change', 'ESS',
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 
+                          'global_cog_score', 'global_cog_score_change', 'EDS', 'Insomnia',
                           'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
                   coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
 
@@ -739,7 +786,7 @@ survey_short <- subset(survey_short,  !is.na(lgCrp))
 
 # Run the analysis
 for (i in 1:14){
-  if (i<11){
+  if (i<9){
     form <- as.formula(paste0(tab$pheno[i], paste('~ PRS_EUR_std + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -747,7 +794,7 @@ for (i in 1:14){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 11:12){
+  if (i %in% 9:12){
     form <- as.formula(paste0(tab$pheno[i], paste('~ PRS_EUR_std + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -771,7 +818,7 @@ for (i in 1:14){
 eur <- tab %>% mutate(group='PRS_EUR')
 
 for (i in 1:14){
-  if (i<11){
+  if (i<9){
     form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) 
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -779,7 +826,7 @@ for (i in 1:14){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 11:12){
+  if (i %in% 9:12){
     form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -805,7 +852,7 @@ for (i in 1:14){
 wsum.all <- tab %>% mutate(group='PRS_wsum_all')
 
 for (i in 1:14){
-  if (i<11){
+  if (i<9){
     form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_hisp + AGE + GENDER + BMI + CENTER + BKGRD1_C7 + EV1 + EV2 + EV3 + EV4 + EV5'))) #Zmrs_HEnet
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -813,7 +860,7 @@ for (i in 1:14){
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 11:12){
+  if (i %in% 9:12){
     form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_hisp + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
@@ -843,30 +890,35 @@ dt <- sdata[complete.cases(sdata$lgCrp),]
 dt <- dt[complete.cases(dt$EV1),]
 res <- res[order(res$pheno),]
 row.names(res) <- 1:nrow(res)
-res$s.size[c(1:3,13:15,16:18)] <- nrow(dt)
+res$s.size[c(1:3,13:15,19:21)] <- nrow(dt)
 res$s.size[4:6] <- nrow(dt[complete.cases(dt$ESS),])
 res$s.size[7:9] <- nrow(dt[complete.cases(dt$global_cog_score),])
 res$s.size[10:12] <- nrow(dt[complete.cases(dt$global_cog_score_change),])
 l2<- long[complete.cases(long$EV1),]
-res$s.size[19:21] <- nrow(l2[complete.cases(l2$lgCrp),])
+res$s.size[22:24] <- nrow(l2[complete.cases(l2$lgCrp),])
 s2<- short[complete.cases(short$EV1),]
-res$s.size[22:24] <- nrow(s2[complete.cases(s2$lgCrp),])
-res$s.size[25:27] <- nrow(dt[complete.cases(dt$SLPA54),])
-res$s.size[28:36] <- nrow(dt[complete.cases(dt$SLPA91),])
-res$s.size[37:39] <- nrow(dt[complete.cases(dt$SLPDUR),])
-res$s.size[40:42] <- nrow(dt[complete.cases(dt$WHIIRS),])
-#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_PRS_all.csv',row.names = F)
+res$s.size[25:27] <- nrow(s2[complete.cases(s2$lgCrp),])
+res$s.size[28:30] <- nrow(dt[complete.cases(dt$SLPA54),])
+res$s.size[31:39] <- nrow(dt[complete.cases(dt$SLPA91),])
+res$s.size[40:42] <- nrow(dt[complete.cases(dt$SLPDUR),])
+res$s.size[16:18] <- nrow(dt[complete.cases(dt$WHIIRS),])
+#write.csv(res,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_PRS_all.csv',row.names = F)
 ```
 
 
 
 
-## Sensitivity analysis - Adjust for cell types 
+## Sensitivity analysis - Adjust for cell types, waist-hip ratio, and smoking
+
+### MRS-CRP
 ```{r}
 # Read data
 pheno<- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Data/20240629_pheno.csv')
 pheno$DIABETES2_INDICATOR <-relevel(as.factor(pheno$DIABETES2_INDICATOR), ref = 'Normal' )
 pheno$HYPERTENSION <-relevel(as.factor(pheno$HYPERTENSION), ref = 'Normal' )
+pheno$CIGARETTE_USE<-as.character(pheno$CIGARETTE_USE)
+pheno$EDS <-relevel(as.factor(pheno$EDS), ref = 'Norm' )
+pheno$Insomnia <-relevel(as.factor(pheno$Insomnia), ref = 'Norm' )
 
 long <- subset(pheno, cDur%in%c('Long','Norm'))
 long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
@@ -882,23 +934,22 @@ survey_short <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_
 survey_short <- subset(survey_short,  !is.na(lgCrp))
 
 
-tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 'WHIIRS',
-                          'global_cog_score', 'global_cog_score_change', 'ESS',
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 
+                          'global_cog_score', 'global_cog_score_change', 'EDS','Insomnia',
                           'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
                   coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
 
-
 for (i in 1:14){
-  if (i<11){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono'))) #Zmrs_HEnet
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE '))) 
     mod <- svyglm(form, design = survey_obj, family = "gaussian")
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
     tab$lower[i] <- confint(mod)[2,1]
     tab$upper[i] <- confint(mod)[2,2]
   }
-  if (i %in% 11:12){
-    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono')))
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
     mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
     tab$coef[i] <- summary(mod)$coefficients[2,1]
     tab$p.val[i] <- summary(mod)$coefficients[2,4]
@@ -906,7 +957,7 @@ for (i in 1:14){
     tab$upper[i] <- confint(mod)[2,2]
   }
   if (i %in% 13:14) {
-    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER + BMI + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono')))
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
     if (i==13){
     mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
     } else {
@@ -918,9 +969,308 @@ for (i in 1:14){
     tab$upper[i] <- confint(mod)[2,2]
   }
 }
-mrs <- tab %>% mutate(group='MRS_CRP')
-
-#write.csv(mrs,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240701_MRS_cell.csv',row.names = F)
+cig <- tab %>% mutate(group='Smoking')
 
 
+for (i in 1:14){
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono'))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER +BMI+ CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+cell <- tab %>% mutate(group='Cell types')
+
+for (i in 1:14){
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5+ WAIST_HIP  '))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ Zmrs_corrected + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + WAIST_HIP')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ Zmrs_corrected + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 +  WAIST_HIP')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+whr <- tab %>% mutate(group='Waist Hip Ratio')
+all<-rbind(whr,cell,cig)
+
+#write.csv(all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240703_MRS_sense.csv',row.names = F)
+```
+
+### Blood CRP
+```{r}
+# Read data
+tab <- data.frame(pheno=c('SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 
+                          'global_cog_score', 'global_cog_score_change', 'EDS','Insomnia',
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
+                  coef=rep(1,13), p.val=rep(1,13), lower=rep(1,13), upper=rep(1,13))
+
+for (i in 1:13){
+  if (i<8){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE '))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 8:11){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 12:13) {
+    form <- as.formula(paste0('cDur', paste('~ lgCrp + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
+    if (i==12){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+cig <- tab %>% mutate(group='Smoking')
+
+
+for (i in 1:13){
+  if (i<8){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono'))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 8:11){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 12:13) {
+    form <- as.formula(paste0('cDur', paste('~ lgCrp + AGE + GENDER +BMI+ CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    if (i==12){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+cell <- tab %>% mutate(group='Cell types')
+
+for (i in 1:13){
+  if (i<8){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5+ WAIST_HIP  '))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 8:11){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ lgCrp + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + WAIST_HIP')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 12:13) {
+    form <- as.formula(paste0('cDur', paste('~ lgCrp + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 +  WAIST_HIP')))
+    if (i==12){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+whr <- tab %>% mutate(group='Waist Hip Ratio')
+all<-rbind(whr,cell,cig)
+
+#write.csv(all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240703_CRP_sense.csv',row.names = F)
+```
+
+### PRS-CRP
+```{r}
+# Read data
+scsx <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/20240523_SOL_PRS_CSx.csv')
+
+# Prepare survey objects
+pdata <- merge(pheno, scsx[,c(1, 10, 12, 13)], by='SOL_ID') # 2217 samples
+long <- subset(pdata, cDur%in%c('Long','Norm'))
+long$cDur <- relevel(as.factor(long$cDur), ref = 'Norm')
+short <- subset(pdata, cDur%in%c('Short','Norm'))
+short$cDur <- relevel(as.factor(short$cDur), ref = 'Norm')
+
+# Create survey objects
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=pdata)
+survey_obj <- subset(survey_obj,  !is.na(lgCrp))
+survey_long <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=long)
+survey_long <- subset(survey_long,  !is.na(lgCrp))
+survey_short <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=short)
+survey_short <- subset(survey_short,  !is.na(lgCrp))
+
+tab <- data.frame(pheno=c('lgCrp', 'SLPA54', 'SLPA91', 'SLPA92', 'SLPA97', 'SLPDUR', 
+                          'global_cog_score', 'global_cog_score_change', 'EDS','Insomnia',
+                          'DIABETES2_INDICATOR', 'HYPERTENSION', 'LongSlp', 'ShortSlp'),
+                  coef=rep(1,14), p.val=rep(1,14), lower=rep(1,14), upper=rep(1,14))
+
+for (i in 1:14){
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE '))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ wsum_all + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CIGARETTE_USE ')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+cig <- tab %>% mutate(group='Smoking')
+
+
+for (i in 1:14){
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE +BMI+ GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono'))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE +BMI+ GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ wsum_all + AGE + GENDER +BMI+ CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + CD4T + NK + Bcell + Mono ')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+cell <- tab %>% mutate(group='Cell types')
+
+for (i in 1:14){
+  if (i<9){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE + GENDER  + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5+ WAIST_HIP  '))) 
+    mod <- svyglm(form, design = survey_obj, family = "gaussian")
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 9:12){
+    form <- as.formula(paste0(tab$pheno[i], paste('~ wsum_all + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 + CD8T + WAIST_HIP')))
+    mod <- svyglm(form, design = survey_obj, family = quasibinomial(link = "logit"))
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+  if (i %in% 13:14) {
+    form <- as.formula(paste0('cDur', paste('~ wsum_all + AGE + GENDER + CENTER + BKGRD1_C7+ EV1 + EV2 + EV3 + EV4 + EV5 +  WAIST_HIP')))
+    if (i==13){
+    mod <- svyglm(form, design = survey_long, family = quasibinomial(link = "logit"))
+    } else {
+      mod <- svyglm(form, design = survey_short, family = quasibinomial(link = "logit"))
+    }
+    tab$coef[i] <- summary(mod)$coefficients[2,1]
+    tab$p.val[i] <- summary(mod)$coefficients[2,4]
+    tab$lower[i] <- confint(mod)[2,1]
+    tab$upper[i] <- confint(mod)[2,2]
+  }
+}
+whr <- tab %>% mutate(group='Waist Hip Ratio')
+all<-rbind(whr,cell,cig)
+
+#write.csv(all,'~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240703_PRS_sense.csv',row.names = F)
 ```

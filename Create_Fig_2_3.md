@@ -7,8 +7,8 @@ Leslie (ZW)
 
 ``` r
 # Read data
-rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
-rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240523_PRS_CRP.csv')
+rmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MrsCrp_Svy.csv')
+rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_PRS_CRP.csv')
 rprs <- rprs[c(1:28),]
 pl <- rbind(rmrs,rprs)
 
@@ -21,7 +21,7 @@ pl$group <- c(rep('Comorbidities',4),rep('Other sleep traits',4),rep('Comorbidit
            rep('Obstructive sleep apnea',16), rep('Other sleep traits',8))
 
 # Figure 2
-data <- pl[21:23,]
+data <- pl[25:27,]
 data$labels <- paste0(data$pheno,' (',data$group,')')
 data$CRP_measures <- c("MRS-CRP",  "PRS-EUR",  "PRS-wsum")
 
@@ -76,26 +76,25 @@ grid.arrange(tab,mid,ncol=2)
 
 ``` r
 # Data preparation
-rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
+rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MrsCrp_Svy.csv')
 rmrs$fdr <- 1
 rmrs$fdr[1:14] <- p.adjust(rmrs[1:14,]$p.val,method='fdr')
 rmrs$fdr[15:27] <- p.adjust(rmrs[15:27,]$p.val,method='fdr')
-rmrs$pheno[c(8:9,21:22)] <- rep(c('cog_global', 'cog_change'), 2)
+rmrs$pheno[c(7:8,20:21)] <- rep(c('cog_global', 'cog_change'), 2)
 
 rprs$fdr <- 1
 rprs$fdr[1:14] <- p.adjust(rprs[1:14,]$p.val,method='fdr')
 rprs$fdr[15:28] <- p.adjust(rprs[15:28,]$p.val,method='fdr')
-rprs$pheno[c(8:9,22:23)] <- rep(c('cog_global', 'cog_change'), 2)
+rprs$pheno[c(7:8,21:22)] <- rep(c('cog_global', 'cog_change'), 2)
 
 pl <- rbind(rmrs,rprs)
 pl <- pl[order(pl$pheno),]
 row.names(pl) <- 1:nrow(pl)
-Fig3A <- pl[c(32:47),]
-Fig3B <- pl[c(1:8, 13:16, 48:55),]
-Fig3C <- pl[c(9:12, 17:20, 24:31),]
-Fig3C$coef <- exp(Fig3C$coef)
-Fig3C$lower <- exp(Fig3C$lower)
-Fig3C$upper <- exp(Fig3C$upper)
+Fig3A <- pl[c(36:51, 52:55, 1:8),]
+Fig3B <- pl[c(9:12, 17:20, 13:16, 21:24, 28:35),]
+Fig3B$coef <- exp(Fig3B$coef)
+Fig3B$lower <- exp(Fig3B$lower)
+Fig3B$upper <- exp(Fig3B$upper)
 ```
 
 ## Forest plot for Figure 3A
@@ -114,18 +113,21 @@ names(ws) <- paste0('ws_', names(ws))
 Fig3A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(Fig3A)[1] <- 'Phenotype'
 
-Fig3A <- rbind(Fig3A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
-                              bl_coef=rep(NA,1), bl_p.val=rep(NA,1), bl_lower=rep(NA,1),
-                              bl_upper=rep(NA,1), bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), 
-                              mrs_p.val=rep(NA,1), mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), 
-                              mrs_fdr=rep(NA,1), ss_coef=rep(NA,1), ss_p.val=rep(NA,1), 
-                              ss_lower=rep(NA,1), ss_upper=rep(NA,1), ss_fdr=rep(NA,1), 
-                              ws_coef=rep(NA,1), ws_p.val=rep(NA,1), ws_lower=rep(NA,1),
-                              ws_upper=rep(NA,1), ws_fdr=rep(NA,1) ))
+Fig3A <- rbind(Fig3A, data.frame(Phenotype=c('Obstructive Sleep Apnea and Sleep Duration',
+                                             'Cognitive Function'),
+                              bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
+                              bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
+                              mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
+                              mrs_fdr=rep(NA,2), ss_coef=rep(NA,2), ss_p.val=rep(NA,2), 
+                              ss_lower=rep(NA,2), ss_upper=rep(NA,2), ss_fdr=rep(NA,2), 
+                              ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
+                              ws_upper=rep(NA,2), ws_fdr=rep(NA,2) ))
 
-Fig3A <- Fig3A[c(5,1:4),]
 row.names(Fig3A) <- 1:nrow(Fig3A)
-Fig3A$Phenotype[c(2:5)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+Fig3A <- Fig3A[c(8,1:5,9,7,6),]
+row.names(Fig3A) <- 1:nrow(Fig3A)
+Fig3A$Phenotype[c(2:6)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90','Sleep Duration')
+Fig3A$Phenotype[c(8:9)]<-c( 'Baseline', 'Cognitive Change')
 Fig3A$Phenotype <- ifelse(is.na(Fig3A$bl_coef), 
                       Fig3A$Phenotype,
                       paste0("   ", Fig3A$Phenotype))
@@ -225,7 +227,7 @@ names(ws) <- paste0('ws_', names(ws))
 Fig3B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(Fig3B)[1] <- 'Phenotype'
 
-Fig3B <- rbind(Fig3B, data.frame(Phenotype=c('Cognitive Function','Other Sleep Traits'),
+Fig3B <- rbind(Fig3B, data.frame(Phenotype=c('Other Sleep Traits','Metabolic comorbidities'),
                               bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
                               bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
                               mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
@@ -234,9 +236,10 @@ Fig3B <- rbind(Fig3B, data.frame(Phenotype=c('Cognitive Function','Other Sleep T
                               ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
                               ws_upper=rep(NA,2), ws_fdr=rep(NA,2) ))
 
-Fig3B <- Fig3B[c(6,1:2, 7,3:5),]
+Fig3B <- Fig3B[c(7,3:6, 8,1:2),]
 row.names(Fig3B) <- 1:nrow(Fig3B)
-Fig3B$Phenotype[c(2:3,6)]<-c('Change', 'Baseline', 'Sleep Duration')
+Fig3B$Phenotype[c(2,4:5,7:8)] <- c('Excessive daytime sleepiness', 'Long Sleep', 
+                                   'Short Sleep','Diabetes', 'Hypertension')
 Fig3B$Phenotype <- ifelse(is.na(Fig3B$bl_coef), 
                       Fig3B$Phenotype,
                       paste0("   ", Fig3B$Phenotype))
@@ -283,6 +286,7 @@ Fig3B$CI[grepl("NA", Fig3B$CI)] <- "" # Any NA to blank
 Fig3B$Beta[grepl("NA", Fig3B$Beta)] <- "" # Any NA to blank
 Fig3B$q.val[grepl("NA", Fig3B$q.val)] <- "" # Any NA to blank
 Fig3B$p.val[grepl("NA", Fig3B$p.val)] <- "" # Any NA to blank
+names(Fig3B)[24] <- 'Odds Ratio'
 
 #################### plot
 # Set-up theme
@@ -313,120 +317,9 @@ plot <- forest(Fig3B[,c(1,24,23,26,25,22)],
                          Fig3B$ss_upper,
                         Fig3B$ws_upper),
             ci_column = 6,
-            ref_line = 0, # 1
-            theme = tm)
-plot
-```
-
-![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-## Forest plot for Figure 3C - Odds Ratio
-
-``` r
-row.names(Fig3C) <- 1:nrow(Fig3C)
-sub <- split(Fig3C, Fig3C$group) 
-bl <- sub[[1]] %>% dplyr::select(-c(group))
-names(bl) <- paste0('bl_', names(bl))
-mrs <- sub[[2]] %>% dplyr::select(-c(group))
-names(mrs) <- paste0('mrs_', names(mrs))
-ss <- sub[[3]] %>% dplyr::select(-c(group))
-names(ss) <- paste0('ss_', names(ss))
-ws <- sub[[4]] %>% dplyr::select(-c(group))
-names(ws) <- paste0('ws_', names(ws))
-Fig3C<-cbind(bl,mrs,ss,ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
-names(Fig3C)[1]<-'Phenotype'
-
-Fig3C <- rbind(Fig3C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(NA,1),
-                              bl_p.val=rep(NA,1), bl_lower=rep(NA,1), bl_upper=rep(NA,1),
-                              bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), mrs_p.val=rep(NA,1),
-                              mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), mrs_fdr=rep(NA,1),
-                              ss_coef=rep(NA,1), ss_p.val=rep(NA,1), ss_lower=rep(NA,1),
-                              ss_upper=rep(NA,1), ss_fdr=rep(NA,1), ws_coef=rep(NA,1), 
-                              ws_p.val=rep(NA,1),ws_lower=rep(NA,1),ws_upper=rep(NA,1), 
-                              ws_fdr=rep(NA,1) ))
-Fig3C <- Fig3C[c(5,1:4),]
-row.names(Fig3C) <- 1:nrow(Fig3C)
-Fig3C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
-Fig3C$Phenotype <- ifelse(is.na(Fig3C$bl_coef), 
-                      Fig3C$Phenotype,
-                      paste0("   ", Fig3C$Phenotype))
-
-Fig3C$bl_coef <- round(Fig3C$bl_coef,3)
-Fig3C$mrs_coef <- round(Fig3C$mrs_coef,3)
-Fig3C$ss_coef <- round(Fig3C$ss_coef,3)
-Fig3C$ws_coef <- round(Fig3C$ws_coef,3)
-Fig3C$bl_fdr <- format(Fig3C$bl_fdr, scientific=TRUE, digit=2)
-Fig3C$mrs_fdr <- format(Fig3C$mrs_fdr, scientific=TRUE, digit=2)
-Fig3C$ss_fdr <- format(Fig3C$ss_fdr, scientific=TRUE, digit=2)
-Fig3C$ws_fdr <- format(Fig3C$ws_fdr, scientific=TRUE, digit=2)
-Fig3C$bl_p.val <- format(Fig3C$bl_p.val, scientific=TRUE, digit=2)
-Fig3C$mrs_p.val <- format(Fig3C$mrs_p.val, scientific=TRUE, digit=2)
-Fig3C$ss_p.val <- format(Fig3C$ss_p.val, scientific=TRUE, digit=2)
-Fig3C$ws_p.val <- format(Fig3C$ws_p.val, scientific=TRUE, digit=2)
-
-# Add two blank columns for CI
-Fig3C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
-# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-Fig3C$bl_lower <- round(Fig3C$bl_lower,3)
-Fig3C$mrs_lower <- round(Fig3C$mrs_lower,3)
-Fig3C$ss_lower <- round(Fig3C$ss_lower,3)
-Fig3C$ws_lower <- round(Fig3C$ws_lower,3)
-Fig3C$bl_upper <- round(Fig3C$bl_upper,3)
-Fig3C$mrs_upper <- round(Fig3C$mrs_upper,3)
-Fig3C$ss_upper <- round(Fig3C$ss_upper,3)
-Fig3C$ws_upper <- round(Fig3C$ws_upper,3)
-
-Fig3C$CI <- paste(sprintf("(%.2f, %.2f)", Fig3C$bl_lower, Fig3C$bl_upper),
-               sprintf("(%.2f, %.2f)", Fig3C$mrs_lower, Fig3C$mrs_upper),
-                sprintf("(%.2f, %.2f)", Fig3C$ss_lower, Fig3C$ss_upper),
-               sprintf("(%.2f, %.2f)", Fig3C$ws_lower, Fig3C$ws_upper),
-                sep = "\n")
-Fig3C$Beta <- paste(sprintf("%.2f", Fig3C$bl_coef),
-                sprintf("%.2f", Fig3C$mrs_coef),
-                sprintf("%.2f", Fig3C$ss_coef),
-                sprintf("%.2f", Fig3C$ws_coef),
-                sep = "\n")
-Fig3C$q.val <- paste(Fig3C$bl_fdr, Fig3C$mrs_fdr, Fig3C$ss_fdr, Fig3C$ws_fdr,sep = "\n")
-Fig3C$p.val <- paste(Fig3C$bl_p.val, Fig3C$mrs_p.val, Fig3C$ss_p.val, Fig3C$ws_p.val, sep = "\n")
-
-Fig3C$CI[grepl("NA", Fig3C$CI)] <- "" # Any NA to blank
-Fig3C$Beta[grepl("NA", Fig3C$Beta)] <- "" # Any NA to blank
-Fig3C$q.val[grepl("NA", Fig3C$q.val)]<- ""
-Fig3C$p.val[grepl("NA", Fig3C$p.val)]<- ""
-names(Fig3C)[24] <- 'Odds Ratio'
-
-#################### plot
-# Set-up theme
-tm <- forest_theme(base_size = 8,
-                   refline_lty = "solid",
-                   ci_pch = c(15, 18),
-                   ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
-                   footnote_gp = gpar(col = "blue"),
-                   legend_name = "CRP Type",
-                   legend_value = c("Blood CRP", "MRS CRP", "PRS EUR",  "PRS wsum" ),
-                   vertline_lty = c("dashed", "dotted"),
-                   vertline_col = c("#d6604d", "#bababa"),
-                   # Table cell padding, width 4 and heights 3
-                   )
-#> refline_lty will be deprecated, use refline_gp instead.
-names(Fig3C)[23] <- '95%CI'
-plot <- forest(Fig3C[,c(1,24,23,26,25,22)], #
-            est = list(Fig3C$bl_coef,
-                       Fig3C$mrs_coef,
-                       Fig3C$ss_coef,
-                       Fig3C$ws_coef),
-            lower = list(Fig3C$bl_lower,
-                       Fig3C$mrs_lower,
-                         Fig3C$ss_lower,
-                        Fig3C$ws_lower), 
-            upper = list(Fig3C$bl_upper,
-                      Fig3C$mrs_upper,
-                         Fig3C$ss_upper,
-                        Fig3C$ws_upper),
-            ci_column = 6,
             ref_line = 1, 
             theme = tm)
 plot
 ```
 
-![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](Create_Fig_2_3_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->

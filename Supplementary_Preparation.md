@@ -150,26 +150,25 @@ grid.arrange(tab,mid,ncol=2)
 ## Data Preparation
 
 ``` r
-rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
+rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MrsCrp_Svy.csv')
 rmrs1 <- rmrs1[1:14,]
 rmrs1$fdr <- p.adjust(rmrs1$p.val,method='fdr')
-rmrs1$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs1$pheno[c(7:8)] <- c('cog_global', 'cog_change')
 rmrs1$group <- 'Model 1'
-rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MRSCRP_mod2.csv')
+rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MRSCRP_mod2.csv')
 rmrs2 <- rmrs2[1:14,]
 rmrs2$fdr <- p.adjust(rmrs2$p.val,method='fdr')
-rmrs2$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs2$pheno[c(7:8)] <- c('cog_global', 'cog_change')
 rmrs2$group <- 'Model 2'
 
 pl <- rbind(rmrs1,rmrs2)
 pl <- pl[order(pl$pheno),]
 row.names(pl) <- 1:nrow(pl)
-FigS2A <- pl[c(17:24),]
-FigS2B <- pl[c(1:4, 7:8, 11:12, 25:28),]
-FigS2C <- pl[c(5:6, 9:10, 13:16),]
-FigS2C$coef <- exp(FigS2C$coef)
-FigS2C$lower <- exp(FigS2C$lower)
-FigS2C$upper <- exp(FigS2C$upper)
+FigS2A <- pl[c(19:28, 1:4),]
+FigS2B <- pl[c(7:8, 11:12, 15:18, 5:6, 9:10),]
+FigS2B$coef <- exp(FigS2B$coef)
+FigS2B$lower <- exp(FigS2B$lower)
+FigS2B$upper <- exp(FigS2B$upper)
 ```
 
 ## Fig S2A
@@ -185,13 +184,16 @@ names(m2) <- paste0('m2_',names(m2))
 FigS2A <- cbind(m1, m2) %>% dplyr::select(-c(m2_pheno))
 names(FigS2A)[1] <- 'Phenotype'
 
-FigS2A <- rbind(FigS2A,data.frame(Phenotype=c('Obstructive Sleep Apnea'),
-                           m1_coef=rep(NA,1), m1_p.val=rep(NA,1), m1_lower=rep(NA,1), 
-                           m1_upper=rep(NA,1), m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
-                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1), m2_lower=rep(NA,1), m2_upper=rep(NA,1)))
-FigS2A <- FigS2A[c(5,1:4),]
+FigS2A <- rbind(FigS2A,data.frame(Phenotype=c('Obstructive Sleep Apnea and Sleep Duration',
+                                             'Cognitive Function'),
+                           m1_coef=rep(NA,2), m1_p.val=rep(NA,2), m1_lower=rep(NA,2), 
+                           m1_upper=rep(NA,2), m1_fdr=rep(NA,2), m2_fdr=rep(NA,2),
+                           m2_coef=rep(NA,2), m2_p.val=rep(NA,2), m2_lower=rep(NA,2),
+                           m2_upper=rep(NA,2)))
+FigS2A <- FigS2A[c(8,1:5,9,7,6),]
 row.names(FigS2A) <- 1:nrow(FigS2A)
-FigS2A$Phenotype[c(2:5)] <- c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+FigS2A$Phenotype[c(2:6,8:9)] <- c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90',
+                                  'Sleep Duration','Baseline', 'Cognitive Change')
 FigS2A$Phenotype <- ifelse(is.na(FigS2A$m1_coef), 
                       FigS2A$Phenotype,
                       paste0("   ", FigS2A$Phenotype))
@@ -268,13 +270,14 @@ names(m2) <- paste0('m2_', names(m2))
 FigS2B <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
 names(FigS2B)[1] <- 'Phenotype'
 
-FigS2B <- rbind(FigS2B, data.frame(Phenotype=c('Cognitive Function','Other phenotypes'),
+FigS2B <- rbind(FigS2B, data.frame(Phenotype=c('Other Sleep Traits','Metabolic comorbidities'),
                            m1_coef=rep(NA,2),m1_p.val=rep(NA,2), m1_lower=rep(NA,2),
                            m1_upper=rep(NA,2), m1_fdr=rep(NA,2), m2_fdr=rep(NA,2),
                            m2_coef=rep(NA,2), m2_p.val=rep(NA,2),m2_lower=rep(NA,2),m2_upper=rep(NA,2) ))
-FigS2B <- FigS2B[c(7,1:2, 8,3:6),]
+FigS2B <- FigS2B[c(7,1:4, 8,5:6),]
 row.names(FigS2B) <- 1:nrow(FigS2B)
-FigS2B$Phenotype[c(2,3,7)] <- c('Change', 'Baseline', 'Sleep Duration')
+FigS2B$Phenotype[c(2,4:5,7:8)] <- c('Excessive daytime sleepiness', 'Long Sleep', 'Short Sleep',
+                                    'Diabetes', 'Hypertension')
 FigS2B$Phenotype <- ifelse(is.na(FigS2B$m1_coef), 
                       FigS2B$Phenotype,
                       paste0("   ", FigS2B$Phenotype))
@@ -311,6 +314,7 @@ FigS2B$q.val[grepl("NA", FigS2B$q.val)] <- "" # Any NA to blank
 
 #################### plot
 names(FigS2B)[13] <- '95%CI'
+names(FigS2B)[14] <- 'Odds Ratio'
 plot <- forest(FigS2B[,c(1,14,15,16,13,12)], 
             est = list(FigS2B$m1_coef,
                        FigS2B$m2_coef),
@@ -319,93 +323,22 @@ plot <- forest(FigS2B[,c(1,14,15,16,13,12)],
             upper = list(FigS2B$m1_upper,
                          FigS2B$m2_upper),
             ci_column = 6,
-            ref_line = 0, 
+            ref_line = 1, 
             theme = tm)
 plot
 ```
 
 ![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
-## Fig S2C
-
-``` r
-row.names(FigS2C) <- 1:nrow(FigS2C)
-sub <- split(FigS2C, FigS2C$group) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group))
-names(m1) <- paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group))
-names(m2) <- paste0('m2_', names(m2))
-FigS2C <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
-names(FigS2C)[1] <- 'Phenotype'
-
-FigS2C <- rbind(FigS2C, data.frame(Phenotype=c('Other phenotypes'),
-                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),
-                           m1_upper=rep(NA,1),m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
-                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
-FigS2C <- FigS2C[c(5,1:4),]
-row.names(FigS2C) <- 1:nrow(FigS2C)
-FigS2C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
-FigS2C$Phenotype <- ifelse(is.na(FigS2C$m1_coef), 
-                      FigS2C$Phenotype,
-                      paste0("   ", FigS2C$Phenotype))
-# NA to blank or NA will be transformed to carachter.
-FigS2C$m1_coef<-round(FigS2C$m1_coef,3)
-FigS2C$m2_coef<-round(FigS2C$m2_coef,3)
-FigS2C$m1_p.val<-format(FigS2C$m1_p.val, scientific=TRUE, digits=2)
-FigS2C$m2_p.val<-format(FigS2C$m2_p.val, scientific=TRUE, digits=2)
-FigS2C$m1_fdr <- format(FigS2C$m1_fdr, scientific=TRUE, digit=2)
-FigS2C$m2_fdr <- format(FigS2C$m2_fdr, scientific=TRUE, digit=2)
-
-# Add two m1ank columns for CI
-FigS2C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
-# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS2C$m1_lower <- round(FigS2C$m1_lower,3)
-FigS2C$m2_lower <- round(FigS2C$m2_lower,3)
-FigS2C$m1_upper <- round(FigS2C$m1_upper,3)
-FigS2C$m2_upper <- round(FigS2C$m2_upper,3)
-
-FigS2C$CI <- paste(sprintf("(%.2f, %.2f)", FigS2C$m1_lower, FigS2C$m1_upper),
-                sprintf("(%.2f, %.2f)", FigS2C$m2_lower, FigS2C$m2_upper),
-                sep = "\n")
-FigS2C$Beta <- paste(sprintf("%.2f", FigS2C$m1_coef),
-                sprintf("%.2f", FigS2C$m2_coef),
-                sep = "\n")
-FigS2C$p.val <- paste(FigS2C$m1_p.val, FigS2C$m2_p.val,
-                sep = "\n")
-FigS2C$q.val <- paste(FigS2C$m1_fdr, FigS2C$m2_fdr, sep = "\n")
-
-FigS2C$CI[grepl("NA", FigS2C$CI)] <- "" # Any NA to blank
-FigS2C$Beta[grepl("NA", FigS2C$Beta)] <- "" # Any NA to blank
-FigS2C$p.val[grepl("NA", FigS2C$p.val)]<- ""
-FigS2C$q.val[grepl("NA", FigS2C$q.val)]<- ""
-
-#################### plot
-names(FigS2C)[13] <- '95%CI'
-names(FigS2C)[14] <- 'Odds Ratio'
-plot <- forest(FigS2C[,c(1,14,15,16,13,12)], 
-            est = list(FigS2C$m1_coef,
-                       FigS2C$m2_coef),
-            lower = list(FigS2C$m1_lower,
-                         FigS2C$m2_lower),
-            upper = list(FigS2C$m1_upper,
-                         FigS2C$m2_upper),
-            ci_column = 6,
-            ref_line = 1, 
-            theme = tm)
-plot
-```
-
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
 # Create Figure S3
 
 ## Fig S3A
 
 ``` r
-womrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_wo.csv')
+womrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_slp_dis_wo.csv')
 
 # Figure S3A
-pnum <- womrs
+pnum <- womrs[-c(4,5,9,10,14,15,19,20),]
 pnum <- pnum[order(pnum$pheno),]
 row.names(pnum)<-1:nrow(pnum)
 
@@ -485,7 +418,7 @@ tm <- forest_theme(base_size = 8,
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3
                    )
-
+names(pnum)[20] <- 'Beta or OR'
 plot <- forest(pnum[,c(1,20,21,19,18)],
             est = list(pnum$bas_coef,
                        pnum$cha_coef,
@@ -506,15 +439,119 @@ plot <- forest(pnum[,c(1,20,21,19,18)],
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
+##############
+pnum <- womrs[c(4,5,9,10,14,15,19,20),]
+pnum <- pnum[order(pnum$pheno),]
+row.names(pnum)<-1:nrow(pnum)
+pnum$coef <- exp(pnum$coef)
+pnum$lower <- exp(pnum$lower)
+pnum$upper <- exp(pnum$upper)
+
+sub <- split(pnum,pnum$condition) 
+bas <- sub[[1]] %>% dplyr::select(-c(condition)) # baseline
+names(bas) <- paste0('bas_', names(bas))
+cha <- sub[[2]] %>% dplyr::select(-c(condition)) # change
+names(cha) <- paste0('cha_', names(cha))
+dia<-sub[[3]] %>% dplyr::select(-c(condition)) # diab
+names(dia) <- paste0('dia_', names(dia))
+hyp<-sub[[4]] %>% dplyr::select(-c(condition)) # hyp
+names(hyp) <- paste0('hyp_', names(hyp))
+pnum<-cbind(bas, cha, dia, hyp) %>% dplyr::select(-c(cha_pheno, dia_pheno, hyp_pheno))
+names(pnum)[1] <- 'Phenotype'
+
+pnum <- rbind(pnum,data.frame(Phenotype=c('Without adjusting for MRS_CRP'),
+                           bas_coef=rep(NA,1), bas_p.val=rep(NA,1), bas_lower=rep(NA,1), 
+                           bas_upper=rep(NA,1), cha_coef=rep(NA,1), cha_p.val=rep(NA,1),
+                           cha_lower=rep(NA,1), cha_upper=rep(NA,1), dia_coef=rep(NA,1), 
+                           dia_p.val=rep(NA,1), dia_lower=rep(NA,1), dia_upper=rep(NA,1),
+                           hyp_coef=rep(NA,1), hyp_p.val=rep(NA,1), hyp_lower=rep(NA,1),
+                           hyp_upper=rep(NA,1)))
+pnum <- pnum[c(3,1:2),]
+pnum$Phenotype <- ifelse(is.na(pnum$bas_coef), 
+                      pnum$Phenotype,
+                      paste0("   ", pnum$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+pnum$bas_coef <- round(pnum$bas_coef,3)
+pnum$cha_coef <- round(pnum$cha_coef,3)
+pnum$hyp_coef <- round(pnum$hyp_coef,3)
+pnum$dia_coef <- round(pnum$dia_coef,3)
+pnum$bas_p.val <- format(pnum$bas_p.val, digits=2, scientific=TRUE)
+pnum$cha_p.val <- format(pnum$cha_p.val, digits=2, scientific=TRUE)
+pnum$hyp_p.val <- format(pnum$hyp_p.val, digits=2, scientific=TRUE)
+pnum$dia_p.val <- format(pnum$dia_p.val, digits=2, scientific=TRUE)
+
+# Add two basank columns for CI
+pnum$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+pnum$bas_lower <- round(pnum$bas_lower,3)
+pnum$cha_lower <- round(pnum$cha_lower,3)
+pnum$hyp_lower <- round(pnum$hyp_lower,3)
+pnum$dia_lower <- round(pnum$dia_lower,3)
+pnum$bas_upper <- round(pnum$bas_upper,4)
+pnum$cha_upper <- round(pnum$cha_upper,3)
+pnum$hyp_upper <- round(pnum$hyp_upper,3)
+pnum$dia_upper <- round(pnum$dia_upper,3)
+
+pnum$CI <- paste(sprintf("(%.2f, %.2f)", pnum$bas_lower, pnum$bas_upper), 
+                sprintf("(%.2f, %.2f)", pnum$cha_lower, pnum$cha_upper),
+                sprintf("(%.2f, %.2f)", pnum$dia_lower, pnum$dia_upper),
+                sprintf("(%.2f, %.2f)", pnum$hyp_lower, pnum$hyp_upper),
+                sep = "\n")
+pnum$Beta <- paste(sprintf("%.2f", pnum$bas_coef),
+                sprintf("%.2f", pnum$cha_coef),
+                sprintf("%.2f", pnum$dia_coef),
+                sprintf("%.2f", pnum$hyp_coef),
+                sep = "\n")
+pnum$p.val <- paste( pnum$bas_p.val, pnum$cha_p.val, pnum$dia_p.val, pnum$hyp_p.val,
+                sep = "\n")
+pnum$CI[grepl("NA", pnum$CI)] <- "" # Any NA to blank
+pnum$Beta[grepl("NA", pnum$Beta)] <- "" # Any NA to blank
+pnum$p.val[grepl("NA", pnum$p.val)] <- "" # Any NA to blank
+
+tm <- forest_theme(base_size = 8,
+                   refline_lty = "solid",
+                   ci_pch = c(15, 18),
+                   ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
+                   footnote_gp = gpar(col = "blue"),
+                   legend_name = "CRP_Type",
+                   legend_value = c("", "", "",  "" ),
+                   vertline_lty = c("dashed", "dotted"),
+                   vertline_col = c("#d6604d", "#bababa"),
+                   # Table cell padding, width 4 and heights 3
+                   )
+names(pnum)[20] <- 'Beta or OR'
+plot <- forest(pnum[,c(1,20,21,19,18)],
+            est = list(pnum$bas_coef,
+                       pnum$cha_coef,
+                       pnum$dia_coef,
+                       pnum$hyp_coef),
+            lower = list(pnum$bas_lower,
+                         pnum$cha_lower,
+                         pnum$dia_lower,
+                         pnum$hyp_lower), 
+            upper = list(pnum$bas_upper,
+                         pnum$cha_upper,
+                         pnum$dia_upper,
+                         pnum$hyp_upper),
+            ci_column = 5,
+            ref_line = 1, # 1
+            theme = tm)
+
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ## Fig S3B
 
 ``` r
-wmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_slp_dis_w.csv')
+wmrs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_slp_dis_w.csv')
 
 # Figure S3B
-pnum <- wmrs
+pnum <- wmrs[-c(4,5,9,10,14,15,19,20),]
 pnum <- pnum[order(pnum$pheno),]
 row.names(pnum)<-1:nrow(pnum)
 
@@ -594,7 +631,7 @@ tm <- forest_theme(base_size = 8,
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3
                    )
-
+names(pnum)[20] <- 'Beta or OR'
 plot <- forest(pnum[,c(1,20,21,19,18)],
             est = list(pnum$bas_coef,
                        pnum$cha_coef,
@@ -615,23 +652,127 @@ plot <- forest(pnum[,c(1,20,21,19,18)],
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+##############
+pnum <- wmrs[c(4,5,9,10,14,15,19,20),]
+pnum <- pnum[order(pnum$pheno),]
+row.names(pnum)<-1:nrow(pnum)
+pnum$coef <- exp(pnum$coef)
+pnum$lower <- exp(pnum$lower)
+pnum$upper <- exp(pnum$upper)
+
+sub <- split(pnum,pnum$condition) 
+bas <- sub[[1]] %>% dplyr::select(-c(condition)) # baseline
+names(bas) <- paste0('bas_', names(bas))
+cha <- sub[[2]] %>% dplyr::select(-c(condition)) # change
+names(cha) <- paste0('cha_', names(cha))
+dia<-sub[[3]] %>% dplyr::select(-c(condition)) # diab
+names(dia) <- paste0('dia_', names(dia))
+hyp<-sub[[4]] %>% dplyr::select(-c(condition)) # hyp
+names(hyp) <- paste0('hyp_', names(hyp))
+pnum<-cbind(bas, cha, dia, hyp) %>% dplyr::select(-c(cha_pheno, dia_pheno, hyp_pheno))
+names(pnum)[1] <- 'Phenotype'
+
+pnum <- rbind(pnum,data.frame(Phenotype=c('Adjusting for MRS_CRP'),
+                           bas_coef=rep(NA,1), bas_p.val=rep(NA,1), bas_lower=rep(NA,1), 
+                           bas_upper=rep(NA,1), cha_coef=rep(NA,1), cha_p.val=rep(NA,1),
+                           cha_lower=rep(NA,1), cha_upper=rep(NA,1), dia_coef=rep(NA,1), 
+                           dia_p.val=rep(NA,1), dia_lower=rep(NA,1), dia_upper=rep(NA,1),
+                           hyp_coef=rep(NA,1), hyp_p.val=rep(NA,1), hyp_lower=rep(NA,1),
+                           hyp_upper=rep(NA,1)))
+pnum <- pnum[c(3,1:2),]
+pnum$Phenotype <- ifelse(is.na(pnum$bas_coef), 
+                      pnum$Phenotype,
+                      paste0("   ", pnum$Phenotype))
+# NA to blank or NA will be transformed to carachter.
+pnum$bas_coef <- round(pnum$bas_coef,3)
+pnum$cha_coef <- round(pnum$cha_coef,3)
+pnum$hyp_coef <- round(pnum$hyp_coef,3)
+pnum$dia_coef <- round(pnum$dia_coef,3)
+pnum$bas_p.val <- format(pnum$bas_p.val, digits=2, scientific=TRUE)
+pnum$cha_p.val <- format(pnum$cha_p.val, digits=2, scientific=TRUE)
+pnum$hyp_p.val <- format(pnum$hyp_p.val, digits=2, scientific=TRUE)
+pnum$dia_p.val <- format(pnum$dia_p.val, digits=2, scientific=TRUE)
+
+# Add two basank columns for CI
+pnum$`95% CI` <- paste(rep(" ", 50), collapse = " ")
+# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
+pnum$bas_lower <- round(pnum$bas_lower,3)
+pnum$cha_lower <- round(pnum$cha_lower,3)
+pnum$hyp_lower <- round(pnum$hyp_lower,3)
+pnum$dia_lower <- round(pnum$dia_lower,3)
+pnum$bas_upper <- round(pnum$bas_upper,4)
+pnum$cha_upper <- round(pnum$cha_upper,3)
+pnum$hyp_upper <- round(pnum$hyp_upper,3)
+pnum$dia_upper <- round(pnum$dia_upper,3)
+
+pnum$CI <- paste(sprintf("(%.2f, %.2f)", pnum$bas_lower, pnum$bas_upper), 
+                sprintf("(%.2f, %.2f)", pnum$cha_lower, pnum$cha_upper),
+                sprintf("(%.2f, %.2f)", pnum$dia_lower, pnum$dia_upper),
+                sprintf("(%.2f, %.2f)", pnum$hyp_lower, pnum$hyp_upper),
+                sep = "\n")
+pnum$Beta <- paste(sprintf("%.2f", pnum$bas_coef),
+                sprintf("%.2f", pnum$cha_coef),
+                sprintf("%.2f", pnum$dia_coef),
+                sprintf("%.2f", pnum$hyp_coef),
+                sep = "\n")
+pnum$p.val <- paste( pnum$bas_p.val, pnum$cha_p.val, pnum$dia_p.val, pnum$hyp_p.val,
+                sep = "\n")
+pnum$CI[grepl("NA", pnum$CI)] <- "" # Any NA to blank
+pnum$Beta[grepl("NA", pnum$Beta)] <- "" # Any NA to blank
+pnum$p.val[grepl("NA", pnum$p.val)] <- "" # Any NA to blank
+
+tm <- forest_theme(base_size = 8,
+                   refline_lty = "solid",
+                   ci_pch = c(15, 18),
+                   ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
+                   footnote_gp = gpar(col = "blue"),
+                   legend_name = "CRP_Type",
+                   legend_value = c("", "", "",  "" ),
+                   vertline_lty = c("dashed", "dotted"),
+                   vertline_col = c("#d6604d", "#bababa"),
+                   # Table cell padding, width 4 and heights 3
+                   )
+names(pnum)[20] <- 'Beta or OR'
+plot <- forest(pnum[,c(1,20,21,19,18)],
+            est = list(pnum$bas_coef,
+                       pnum$cha_coef,
+                       pnum$dia_coef,
+                       pnum$hyp_coef),
+            lower = list(pnum$bas_lower,
+                         pnum$cha_lower,
+                         pnum$dia_lower,
+                         pnum$hyp_lower), 
+            upper = list(pnum$bas_upper,
+                         pnum$cha_upper,
+                         pnum$dia_upper,
+                         pnum$hyp_upper),
+            ci_column = 5,
+            ref_line = 1, # 1
+            theme = tm)
+
+plot
+```
+
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 # Create Figure S4
 
 ## Data Preparation
 
 ``` r
-woprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
+woprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MrsCrp_Svy.csv')
 wo.num <- subset(woprs, pheno%in%c('lgCrp','SLPA54','SLPA91','SLPA92') & group %in% 'MRS_CRP')
-wo.cat <- subset(woprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp') 
+wo.cat <- subset(woprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','Insomnia','LongSlp') 
            & group%in%'MRS_CRP')
 wo.num$mod<-'1' # without adjusting for PRS
 wo.cat$mod<-'1'
 
-wprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_wprs.csv')
+wprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_wprs.csv')
 w.num <- subset(wprs, pheno%in%c('lgCrp','SLPA54','SLPA91','SLPA92'))
-w.cat <- subset(wprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','LongSlp'))
+w.cat <- subset(wprs, pheno%in%c('DIABETES2_INDICATOR','HYPERTENSION','Insomnia','LongSlp'))
 w.num$mod <- '2' # adjusting for PRS
 w.cat$mod <- '2'
 
@@ -719,7 +860,7 @@ plot <- forest(FigS4A[,c(1,12,13,11,10)],
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ## Fig S4B
 
@@ -736,9 +877,9 @@ names(FigS4B)[1] <- 'Phenotype'
 FigS4B <- rbind(FigS4B, data.frame(Phenotype=c('Association with MRS-CRP'),
                            m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),m1_upper=rep(NA,1),
                            m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
-FigS4B <- FigS4B[c(4,1:3),]
+FigS4B <- FigS4B[c(5,1:4),]
 row.names(FigS4B) <- 1:nrow(FigS4B)
-FigS4B$Phenotype[c(2,3,4)] <- c('Diabetes', 'Hypertension', 'Long Sleep')
+FigS4B$Phenotype[c(3:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep')
 FigS4B$Phenotype <- ifelse(is.na(FigS4B$m1_coef), 
                       FigS4B$Phenotype,
                       paste0("   ", FigS4B$Phenotype))
@@ -785,7 +926,7 @@ plot <- forest(FigS4B[,c(1,12,13,11,10)],
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 # Create Figure S5
 
@@ -801,7 +942,7 @@ ggplot()  +
   theme_minimal()
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 ### Figure S5B
@@ -823,20 +964,20 @@ ggplot() +
   theme_minimal()
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 # Create Figure S6
 
 ## Read Data
 
 ``` r
-rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_lgCRP_all.csv')
-rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240604_PRS_all.csv')
+rmrs<-read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_lgCRP_all.csv')
+rprs <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_PRS_all.csv')
 rprs <- rprs[order(rprs$group),]
 row.names(rprs) <- 1:nrow(rprs)
 rmrs$fdr <- 1
 rmrs$fdr <- p.adjust(rmrs$p.val,method='fdr')
-rmrs$pheno[c(7:8)] <- c('cog_global', 'cog_change')
+rmrs$pheno[c(6:7)] <- c('cog_global', 'cog_change')
 
 rprs$fdr <- 1
 rprs$fdr[1:14] <- p.adjust(rprs[1:14,]$p.val,method='fdr')
@@ -847,12 +988,11 @@ rprs$pheno[c(3:4,17:18,31:32)] <- rep(c('cog_global', 'cog_change'), 3)
 pl <- rbind(rmrs,rprs)
 pl <- pl[order(pl$pheno),]
 row.names(pl) <- 1:nrow(pl)
-FigS6A <- pl[c(32:47),]
-FigS6B <- pl[c(1:8, 13:16, 48:55),]
-FigS6C <- pl[c(9:12, 17:20, 24:31),]
-FigS6C$coef <- exp(FigS6C$coef)
-FigS6C$lower <- exp(FigS6C$lower)
-FigS6C$upper <- exp(FigS6C$upper)
+FigS6A <- pl[c(36:51, 52:55, 1:8),]
+FigS6B <- pl[c(9:12, 17:20, 13:16, 21:24, 28:35),]
+FigS6B$coef <- exp(FigS6B$coef)
+FigS6B$lower <- exp(FigS6B$lower)
+FigS6B$upper <- exp(FigS6B$upper)
 ```
 
 ## Fig S6A
@@ -871,19 +1011,21 @@ names(ws) <- paste0('ws_', names(ws))
 FigS6A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(FigS6A)[1] <- 'Phenotype'
 
-FigS6A <- rbind(FigS6A, data.frame(Phenotype=c('Obstructive Sleep Apnea'),
-                              bl_coef=rep(NA,1), bl_p.val=rep(NA,1), bl_lower=rep(NA,1),
-                              bl_upper=rep(NA,1), bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), 
-                              mrs_p.val=rep(NA,1), mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), 
-                              mrs_fdr=rep(NA,1), ss_coef=rep(NA,1), ss_p.val=rep(NA,1), 
-                              ss_lower=rep(NA,1), ss_upper=rep(NA,1), ss_fdr=rep(NA,1), 
-                              ws_coef=rep(NA,1), ws_p.val=rep(NA,1), ws_lower=rep(NA,1),
-                              ws_upper=rep(NA,1), ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), 
-                              mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1)))
+FigS6A <- rbind(FigS6A, data.frame(Phenotype=c('Obstructive Sleep Apnea and Sleep Duration',
+                                             'Cognitive Function'),
+                              bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
+                              bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
+                              mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
+                              mrs_fdr=rep(NA,2), ss_coef=rep(NA,2), ss_p.val=rep(NA,2), 
+                              ss_lower=rep(NA,2), ss_upper=rep(NA,2), ss_fdr=rep(NA,2), 
+                              ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
+                              ws_upper=rep(NA,2), ws_fdr=rep(NA,2), bl_s.size=rep(NA,2), 
+                              mrs_s.size=rep(NA,2), ss_s.size=rep(NA,2), ws_s.size=rep(NA,2)))
 
-FigS6A <- FigS6A[c(5,1:4),]
+FigS6A <- FigS6A[c(8,1:5,9,7,6),]
 row.names(FigS6A) <- 1:nrow(FigS6A)
-FigS6A$Phenotype[c(2:5)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
+FigS6A$Phenotype[c(2:6,8:9)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90',
+                                'Sleep Duration', 'Baseline', 'Cognitive Change')
 FigS6A$Phenotype <- ifelse(is.na(FigS6A$bl_coef), 
                       FigS6A$Phenotype,
                       paste0("   ", FigS6A$Phenotype))
@@ -968,7 +1110,7 @@ plot <- forest(FigS6A[,c(1,28,27,30,29,31,26)],
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ## Fig S6B
 
@@ -986,7 +1128,7 @@ names(ws) <- paste0('ws_', names(ws))
 FigS6B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(FigS6B)[1] <- 'Phenotype'
 
-FigS6B <- rbind(FigS6B, data.frame(Phenotype=c('Cognitive Function','Other Sleep Traits'),
+FigS6B <- rbind(FigS6B, data.frame(Phenotype=c('Other Sleep Traits','Metabolic comorbidities'),
                               bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
                               bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
                               mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
@@ -996,9 +1138,10 @@ FigS6B <- rbind(FigS6B, data.frame(Phenotype=c('Cognitive Function','Other Sleep
                               ws_upper=rep(NA,2), ws_fdr=rep(NA,2), bl_s.size=rep(NA,1), 
                               mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1), ws_s.size=rep(NA,1) ))
 
-FigS6B <- FigS6B[c(6,1:2, 7,3:5),]
+FigS6B <- FigS6B[c(7,3:6, 8,1:2),]
 row.names(FigS6B) <- 1:nrow(FigS6B)
-FigS6B$Phenotype[c(2:3,6)]<-c('Change', 'Baseline', 'Sleep Duration')
+FigS6B$Phenotype[c(2,4:5,7:8)] <- c('Excessive daytime sleepiness', 'Long Sleep', 
+                                   'Short Sleep','Diabetes', 'Hypertension')
 FigS6B$Phenotype <- ifelse(is.na(FigS6B$bl_coef), 
                       FigS6B$Phenotype,
                       paste0("   ", FigS6B$Phenotype))
@@ -1051,6 +1194,7 @@ FigS6B$Sample.size[grepl("NA", FigS6B$Sample.size)] <- ""
 
 # Generate plot
 names(FigS6B)[27]<-'95%CI'
+names(FigS6B)[28] <- 'Odds Ratio'
 plot <- forest(FigS6B[,c(1,28,27,30,29,31,26)], 
             est = list(FigS6B$bl_coef,
                        FigS6B$mrs_coef,
@@ -1065,366 +1209,254 @@ plot <- forest(FigS6B[,c(1,28,27,30,29,31,26)],
                          FigS6B$ss_upper,
                         FigS6B$ws_upper),
             ci_column = 7,
-            ref_line = 0, # 1
+            ref_line = 1, # 1
             theme = tm)
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
-
-## Fig S6C
-
-``` r
-row.names(FigS6C) <- 1:nrow(FigS6C)
-sub <- split(FigS6C, FigS6C$group) 
-bl <- sub[[1]] %>% dplyr::select(-c(group))
-names(bl) <- paste0('bl_', names(bl))
-mrs <- sub[[2]] %>% dplyr::select(-c(group))
-names(mrs) <- paste0('mrs_', names(mrs))
-ss <- sub[[3]] %>% dplyr::select(-c(group))
-names(ss) <- paste0('ss_', names(ss))
-ws <- sub[[4]] %>% dplyr::select(-c(group))
-names(ws) <- paste0('ws_', names(ws))
-FigS6C<-cbind(bl,mrs,ss,ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
-names(FigS6C)[1]<-'Phenotype'
-
-FigS6C <- rbind(FigS6C, data.frame(Phenotype=c('Other phenotypes'), bl_coef=rep(NA,1),
-                              bl_p.val=rep(NA,1), bl_lower=rep(NA,1), bl_upper=rep(NA,1),
-                              bl_fdr=rep(NA,1), mrs_coef=rep(NA,1), mrs_p.val=rep(NA,1),
-                              mrs_lower=rep(NA,1), mrs_upper=rep(NA,1), mrs_fdr=rep(NA,1),
-                              ss_coef=rep(NA,1), ss_p.val=rep(NA,1), ss_lower=rep(NA,1),
-                              ss_upper=rep(NA,1), ss_fdr=rep(NA,1), ws_coef=rep(NA,1), 
-                              ws_p.val=rep(NA,1),ws_lower=rep(NA,1),ws_upper=rep(NA,1), 
-                              ws_fdr=rep(NA,1), bl_s.size=rep(NA,1), ws_s.size=rep(NA,1),
-                              mrs_s.size=rep(NA,1), ss_s.size=rep(NA,1) ))
-FigS6C <- FigS6C[c(5,1:4),]
-row.names(FigS6C) <- 1:nrow(FigS6C)
-FigS6C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
-FigS6C$Phenotype <- ifelse(is.na(FigS6C$bl_coef), 
-                      FigS6C$Phenotype,
-                      paste0("   ", FigS6C$Phenotype))
-
-FigS6C$bl_coef <- round(FigS6C$bl_coef,3)
-FigS6C$mrs_coef <- round(FigS6C$mrs_coef,3)
-FigS6C$ss_coef <- round(FigS6C$ss_coef,3)
-FigS6C$ws_coef <- round(FigS6C$ws_coef,3)
-FigS6C$bl_fdr <- format(FigS6C$bl_fdr, scientific=TRUE, digit=2)
-FigS6C$mrs_fdr <- format(FigS6C$mrs_fdr, scientific=TRUE, digit=2)
-FigS6C$ss_fdr <- format(FigS6C$ss_fdr, scientific=TRUE, digit=2)
-FigS6C$ws_fdr <- format(FigS6C$ws_fdr, scientific=TRUE, digit=2)
-FigS6C$bl_p.val <- format(FigS6C$bl_p.val, scientific=TRUE, digit=2)
-FigS6C$mrs_p.val <- format(FigS6C$mrs_p.val, scientific=TRUE, digit=2)
-FigS6C$ss_p.val <- format(FigS6C$ss_p.val, scientific=TRUE, digit=2)
-FigS6C$ws_p.val <- format(FigS6C$ws_p.val, scientific=TRUE, digit=2)
-
-# Add two blank columns for CI
-FigS6C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
-# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS6C$bl_lower <- round(FigS6C$bl_lower,3)
-FigS6C$mrs_lower <- round(FigS6C$mrs_lower,3)
-FigS6C$ss_lower <- round(FigS6C$ss_lower,3)
-FigS6C$ws_lower <- round(FigS6C$ws_lower,3)
-FigS6C$bl_upper <- round(FigS6C$bl_upper,3)
-FigS6C$mrs_upper <- round(FigS6C$mrs_upper,3)
-FigS6C$ss_upper <- round(FigS6C$ss_upper,3)
-FigS6C$ws_upper <- round(FigS6C$ws_upper,3)
-
-FigS6C$CI <- paste(sprintf("(%.2f, %.2f)", FigS6C$bl_lower, FigS6C$bl_upper),
-               sprintf("(%.2f, %.2f)", FigS6C$mrs_lower, FigS6C$mrs_upper),
-                sprintf("(%.2f, %.2f)", FigS6C$ss_lower, FigS6C$ss_upper),
-               sprintf("(%.2f, %.2f)", FigS6C$ws_lower, FigS6C$ws_upper),
-                sep = "\n")
-FigS6C$Beta <- paste(sprintf("%.2f", FigS6C$bl_coef),
-                sprintf("%.2f", FigS6C$mrs_coef),
-                sprintf("%.2f", FigS6C$ss_coef),
-                sprintf("%.2f", FigS6C$ws_coef),
-                sep = "\n")
-FigS6C$q.val <- paste(FigS6C$bl_fdr, FigS6C$mrs_fdr, FigS6C$ss_fdr, FigS6C$ws_fdr,sep = "\n")
-FigS6C$p.val <- paste(FigS6C$bl_p.val, FigS6C$mrs_p.val, FigS6C$ss_p.val, FigS6C$ws_p.val, sep = "\n")
-FigS6C$Sample.size <- paste(FigS6C$bl_s.size, FigS6C$mrs_s.size, FigS6C$ss_s.size, 
-                            FigS6C$ws_s.size,sep = "\n")
-
-FigS6C$CI[grepl("NA", FigS6C$CI)] <- "" # Any NA to blank
-FigS6C$Beta[grepl("NA", FigS6C$Beta)] <- "" # Any NA to blank
-FigS6C$q.val[grepl("NA", FigS6C$q.val)]<- ""
-FigS6C$p.val[grepl("NA", FigS6C$p.val)]<- ""
-FigS6C$Sample.size[grepl("NA", FigS6C$Sample.size)] <- ""
-names(FigS6C)[24] <- 'Odds Ratio'
-
-#################### plot
-names(FigS6C)[27] <- '95%CI'
-plot <- forest(FigS6C[,c(1,28,27,30,29,31,26)], #
-            est = list(FigS6C$bl_coef,
-                       FigS6C$mrs_coef,
-                       FigS6C$ss_coef,
-                       FigS6C$ws_coef),
-            lower = list(FigS6C$bl_lower,
-                       FigS6C$mrs_lower,
-                         FigS6C$ss_lower,
-                        FigS6C$ws_lower), 
-            upper = list(FigS6C$bl_upper,
-                      FigS6C$mrs_upper,
-                         FigS6C$ss_upper,
-                        FigS6C$ws_upper),
-            ci_column = 7,
-            ref_line = 1, 
-            theme = tm)
-plot
-```
-
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 # Create Figure S7
 
 ## Data Preparation
 
 ``` r
-rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240629_MrsCrp_Svy.csv')
+rmrs1 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240704_MrsCrp_Svy.csv')
 rmrs1 <- rmrs1[1:14,]
 rmrs1$fdr <- p.adjust(rmrs1$p.val,method='fdr')
-rmrs1$pheno[c(8:9)] <- c('cog_global', 'cog_change')
+rmrs1$pheno[c(7:8)] <- c('cog_global', 'cog_change')
 rmrs1$group <- 'Model 1'
-rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240701_MRS_cell.csv')
-rmrs2 <- rmrs2[1:14,]
-rmrs2$fdr <- p.adjust(rmrs2$p.val,method='fdr')
-rmrs2$pheno[c(8:9)] <- c('cog_global', 'cog_change')
-rmrs2$group <- 'Sensitivity analysis'
+rmrs2 <- read.csv('~/OneDrive - Beth Israel Lahey Health/2023_methCRP/Results/Survey regression/20240703_MRS_sense.csv')
+rmrs2$fdr <- 1
+rmrs2$fdr[1:14] <- p.adjust(rmrs2[1:14,]$p.val,method='fdr')
+rmrs2$fdr[15:28] <- p.adjust(rmrs2[15:28,]$p.val,method='fdr')
+rmrs2$fdr[29:42] <- p.adjust(rmrs2[29:42,]$p.val,method='fdr')
+rmrs2$pheno[c(7,8,21,22,35,36)] <- rep(c('cog_global', 'cog_change'),3)
 
 pl <- rbind(rmrs1,rmrs2)
 pl <- pl[order(pl$pheno),]
 row.names(pl) <- 1:nrow(pl)
-FigS7A <- pl[c(17:24),]
-FigS7B <- pl[c(1:4, 7:8, 11:12, 25:28),]
-FigS7C <- pl[c(5:6, 9:10, 13:16),]
-FigS7C$coef <- exp(FigS7C$coef)
-FigS7C$lower <- exp(FigS7C$lower)
-FigS7C$upper <- exp(FigS7C$upper)
+FigS7A <- pl[c(37:52, 53:56, 1:8, 25:28),]
+FigS7B <- pl[c(9:12, 17:20, 13:16, 21:24, 29:36),]
+FigS7B$coef <- exp(FigS7B$coef)
+FigS7B$lower <- exp(FigS7B$lower)
+FigS7B$upper <- exp(FigS7B$upper)
 ```
 
-## Fig S7A
+## Forest plot for Figure S7A
 
 ``` r
 row.names(FigS7A) <- 1:nrow(FigS7A)
 sub <- split(FigS7A, FigS7A$group) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group))
-names(m1)<-paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group)) 
-names(m2) <- paste0('m2_',names(m2))
-
-FigS7A <- cbind(m1, m2) %>% dplyr::select(-c(m2_pheno))
+bl <- sub[[2]] %>% dplyr::select(-c(group))
+names(bl) <- paste0('bl_', names(bl))
+mrs <- sub[[1]] %>% dplyr::select(-c(group)) 
+names(mrs) <- paste0('mrs_', names(mrs))
+ss <- sub[[3]]%>% dplyr::select(-c(group)) 
+names(ss) <- paste0('ss_', names(ss))
+ws <- sub[[4]] %>% dplyr::select(-c(group))
+names(ws) <- paste0('ws_', names(ws))
+FigS7A <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(FigS7A)[1] <- 'Phenotype'
 
-FigS7A <- rbind(FigS7A,data.frame(Phenotype=c('Obstructive Sleep Apnea'),
-                           m1_coef=rep(NA,1), m1_p.val=rep(NA,1), m1_lower=rep(NA,1), 
-                           m1_upper=rep(NA,1), m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
-                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1), m2_lower=rep(NA,1), m2_upper=rep(NA,1)))
-FigS7A <- FigS7A[c(5,1:4),]
+FigS7A <- rbind(FigS7A, data.frame(Phenotype=c('Obstructive Sleep Apnea and Sleep Duration',
+                                             'CRP and Cognitive Function'),
+                              bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
+                              bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
+                              mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
+                              mrs_fdr=rep(NA,2), ss_coef=rep(NA,2), ss_p.val=rep(NA,2), 
+                              ss_lower=rep(NA,2), ss_upper=rep(NA,2), ss_fdr=rep(NA,2), 
+                              ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
+                              ws_upper=rep(NA,2), ws_fdr=rep(NA,2) ))
+
 row.names(FigS7A) <- 1:nrow(FigS7A)
-FigS7A$Phenotype[c(2:5)] <- c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90')
-FigS7A$Phenotype <- ifelse(is.na(FigS7A$m1_coef), 
+FigS7A <- FigS7A[c(9,1:5,10,8,7,6),]
+row.names(FigS7A) <- 1:nrow(FigS7A)
+FigS7A$Phenotype[c(2:6)]<-c('AHI','Minimum SpO2','Mean SpO2','% Time SpO2 <90','Sleep Duration')
+FigS7A$Phenotype[c(8:10)]<-c( 'C-reactive Protein', 'Baseline', 'Cognitive Change')
+FigS7A$Phenotype <- ifelse(is.na(FigS7A$bl_coef), 
                       FigS7A$Phenotype,
                       paste0("   ", FigS7A$Phenotype))
 # NA to blank or NA will be transformed to carachter.
-FigS7A$m1_coef<-round(FigS7A$m1_coef,3)
-FigS7A$m2_coef<-round(FigS7A$m2_coef,3)
-FigS7A$m1_p.val<-format(FigS7A$m1_p.val, scientific=TRUE, digits=2)
-FigS7A$m2_p.val<-format(FigS7A$m2_p.val, scientific=TRUE, digits=2)
-FigS7A$m1_fdr <- format(FigS7A$m1_fdr, scientific=TRUE, digit=2)
-FigS7A$m2_fdr <- format(FigS7A$m2_fdr, scientific=TRUE, digit=2)
+FigS7A$bl_coef <- round(FigS7A$bl_coef,3)
+FigS7A$mrs_coef <- round(FigS7A$mrs_coef,3)
+FigS7A$ss_coef <- round(FigS7A$ss_coef,3)
+FigS7A$ws_coef <- round(FigS7A$ws_coef,3)
+FigS7A$bl_fdr <- format(FigS7A$bl_fdr, scientific=TRUE, digit=2)
+FigS7A$mrs_fdr <- format(FigS7A$mrs_fdr, scientific=TRUE, digit=2)
+FigS7A$ss_fdr <- format(FigS7A$ss_fdr, scientific=TRUE, digit=2)
+FigS7A$ws_fdr <- format(FigS7A$ws_fdr, scientific=TRUE, digit=2)
+FigS7A$bl_p.val <- format(FigS7A$bl_p.val, scientific=TRUE, digit=2)
+FigS7A$mrs_p.val <- format(FigS7A$mrs_p.val, scientific=TRUE, digit=2)
+FigS7A$ss_p.val <- format(FigS7A$ss_p.val, scientific=TRUE, digit=2)
+FigS7A$ws_p.val <- format(FigS7A$ws_p.val, scientific=TRUE, digit=2)
 
 # Add two blank columns for CI
 FigS7A$`95% CI` <- paste(rep(" ", 50), collapse = " ")
 # Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS7A$m1_lower <- round(FigS7A$m1_lower,3)
-FigS7A$m2_lower <- round(FigS7A$m2_lower,3)
-FigS7A$m1_upper <- round(FigS7A$m1_upper,4)
-FigS7A$m2_upper <- round(FigS7A$m2_upper,3)
+FigS7A$bl_lower <- round(FigS7A$bl_lower,3)
+FigS7A$mrs_lower <- round(FigS7A$mrs_lower,3)
+FigS7A$ss_lower <- round(FigS7A$ss_lower,3)
+FigS7A$ws_lower <- round(FigS7A$ws_lower,3)
+FigS7A$bl_upper <- round(FigS7A$bl_upper,4)
+FigS7A$mrs_upper <- round(FigS7A$mrs_upper,3)
+FigS7A$ss_upper <- round(FigS7A$ss_upper,3)
+FigS7A$ws_upper <- round(FigS7A$ws_upper,3)
 
-FigS7A$CI <- paste(sprintf("(%.2f, %.2f)", FigS7A$m1_lower, FigS7A$m1_upper), 
-                sprintf("(%.2f, %.2f)", FigS7A$m2_lower, FigS7A$m2_upper), 
+FigS7A$CI <- paste(sprintf("(%.2f, %.2f)", FigS7A$bl_lower, FigS7A$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS7A$mrs_lower, FigS7A$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS7A$ss_lower, FigS7A$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS7A$ws_lower, FigS7A$ws_upper),
                 sep = "\n")
-FigS7A$Beta <- paste(sprintf("%.2f", FigS7A$m1_coef),
-                sprintf("%.2f", FigS7A$m2_coef),
+FigS7A$Beta <- paste(sprintf("%.2f", FigS7A$bl_coef),
+                sprintf("%.2f", FigS7A$mrs_coef),
+                sprintf("%.2f", FigS7A$ss_coef),
+                sprintf("%.2f", FigS7A$ws_coef),
                 sep = "\n")
-FigS7A$p.val <- paste(FigS7A$m1_p.val, FigS7A$m2_p.val,
-                sep = "\n")
-FigS7A$q.val <- paste(FigS7A$m1_fdr, FigS7A$m2_fdr, sep = "\n")
+FigS7A$q.val <- paste(FigS7A$bl_fdr, FigS7A$mrs_fdr, FigS7A$ss_fdr, FigS7A$ws_fdr,sep = "\n")
+FigS7A$p.val <- paste(FigS7A$bl_p.val, FigS7A$mrs_p.val, FigS7A$ss_p.val, FigS7A$ws_p.val, sep = "\n")
 
 FigS7A$CI[grepl("NA", FigS7A$CI)] <- "" # Any NA to blank
 FigS7A$Beta[grepl("NA", FigS7A$Beta)] <- "" # Any NA to blank
-FigS7A$p.val[grepl("NA", FigS7A$p.val)] <- "" # Any NA to blank
 FigS7A$q.val[grepl("NA", FigS7A$q.val)] <- "" # Any NA to blank
+FigS7A$p.val[grepl("NA", FigS7A$p.val)] <- "" # Any NA to blank
 
 #################### plot
 # Set-up theme
 tm <- forest_theme(base_size = 8,
                    refline_lty = "solid",
                    ci_pch = c(15, 18),
-                   ci_col = c( "#AF0040","#377eb8"),
+                   ci_col = c("#762a83", "#AF0040","#377eb8","#4daf4a"),
                    footnote_gp = gpar(col = "blue"),
-                   legend_name = "Model",
-                   legend_value = c("Model 1", "Sensitivity analysis" ),
+                   legend_name = "CRP Type",
+                   legend_value = c("Model 1", "Cell type %", "Smoking",  "Waist-hip ratio" ),
                    vertline_lty = c("dashed", "dotted"),
                    vertline_col = c("#d6604d", "#bababa"),
                    # Table cell padding, width 4 and heights 3
                    )
-#> refline_lty will be deprecated, use refline_gp instead.
-names(FigS7A)[13]<-'95%CI'
-plot <- forest(FigS7A[,c(1,14,15,16,13,12)], 
-            est = list(FigS7A$m1_coef,
-                       FigS7A$m2_coef),
-            lower = list(FigS7A$m1_lower,
-                         FigS7A$m2_lower),
-            upper = list(FigS7A$m1_upper,
-                         FigS7A$m2_upper),
+# Generate plot
+names(FigS7A)[23]<-'95%CI'
+plot <- forest(FigS7A[,c(1,24,23,26,25,22)], 
+            est = list(FigS7A$bl_coef,
+                       FigS7A$mrs_coef,
+                       FigS7A$ss_coef,
+                       FigS7A$ws_coef),
+            lower = list(FigS7A$bl_lower,
+                       FigS7A$mrs_lower,
+                         FigS7A$ss_lower,
+                        FigS7A$ws_lower), 
+            upper = list(FigS7A$bl_upper,
+                      FigS7A$mrs_upper,
+                         FigS7A$ss_upper,
+                        FigS7A$ws_upper),
             ci_column = 6,
-            ref_line = 0, 
+            ref_line = 0, # 1
             theme = tm)
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
-## Fig S7B
+## Forest plot for Figure S7B
 
 ``` r
 row.names(FigS7B) <- 1:nrow(FigS7B)
 sub <- split(FigS7B, FigS7B$group) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group))
-names(m1) <- paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group))
-names(m2) <- paste0('m2_', names(m2))
-FigS7B <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
+bl <- sub[[2]] %>% dplyr::select(-c(group))
+names(bl) <- paste0('bl_', names(bl))
+mrs <- sub[[1]] %>% dplyr::select(-c(group)) 
+names(mrs) <- paste0('mrs_', names(mrs))
+ss <- sub[[3]]%>% dplyr::select(-c(group)) 
+names(ss) <- paste0('ss_', names(ss))
+ws <- sub[[4]] %>% dplyr::select(-c(group))
+names(ws) <- paste0('ws_', names(ws))
+FigS7B <- cbind(bl, mrs, ss, ws) %>% dplyr::select(-c(mrs_pheno,ss_pheno,ws_pheno))
 names(FigS7B)[1] <- 'Phenotype'
 
-FigS7B <- rbind(FigS7B, data.frame(Phenotype=c('Cognitive Function','Other phenotypes'),
-                           m1_coef=rep(NA,2),m1_p.val=rep(NA,2), m1_lower=rep(NA,2),
-                           m1_upper=rep(NA,2), m1_fdr=rep(NA,2), m2_fdr=rep(NA,2),
-                           m2_coef=rep(NA,2), m2_p.val=rep(NA,2),m2_lower=rep(NA,2),m2_upper=rep(NA,2) ))
-FigS7B <- FigS7B[c(7,1:2, 8,3:6),]
+FigS7B <- rbind(FigS7B, data.frame(Phenotype=c('Other Sleep Traits','Metabolic comorbidities'),
+                              bl_coef=rep(NA,2), bl_p.val=rep(NA,2), bl_lower=rep(NA,2),
+                              bl_upper=rep(NA,2), bl_fdr=rep(NA,2), mrs_coef=rep(NA,2), 
+                              mrs_p.val=rep(NA,2), mrs_lower=rep(NA,2), mrs_upper=rep(NA,2), 
+                              mrs_fdr=rep(NA,2), ss_coef=rep(NA,2), ss_p.val=rep(NA,2), 
+                              ss_lower=rep(NA,2), ss_upper=rep(NA,2), ss_fdr=rep(NA,2), 
+                              ws_coef=rep(NA,2), ws_p.val=rep(NA,2), ws_lower=rep(NA,2),
+                              ws_upper=rep(NA,2), ws_fdr=rep(NA,2) ))
+
+FigS7B <- FigS7B[c(7,3:6, 8,1:2),]
 row.names(FigS7B) <- 1:nrow(FigS7B)
-FigS7B$Phenotype[c(2,3,7)] <- c('Change', 'Baseline', 'Sleep Duration')
-FigS7B$Phenotype <- ifelse(is.na(FigS7B$m1_coef), 
+FigS7B$Phenotype[c(2,4:5,7:8)] <- c('Excessive daytime sleepiness', 'Long Sleep', 
+                                   'Short Sleep','Diabetes', 'Hypertension')
+FigS7B$Phenotype <- ifelse(is.na(FigS7B$bl_coef), 
                       FigS7B$Phenotype,
                       paste0("   ", FigS7B$Phenotype))
 # NA to blank or NA will be transformed to carachter.
-FigS7B$m1_coef<-round(FigS7B$m1_coef,3)
-FigS7B$m2_coef<-round(FigS7B$m2_coef,3)
-FigS7B$m1_p.val<-format(FigS7B$m1_p.val, scientific=TRUE, digits=2)
-FigS7B$m2_p.val<-format(FigS7B$m2_p.val, scientific=TRUE, digits=2)
-FigS7B$m1_fdr <- format(FigS7B$m1_fdr, scientific=TRUE, digit=2)
-FigS7B$m2_fdr <- format(FigS7B$m2_fdr, scientific=TRUE, digit=2)
+FigS7B$bl_coef <- round(FigS7B$bl_coef,3)
+FigS7B$mrs_coef <- round(FigS7B$mrs_coef,3)
+FigS7B$ss_coef <- round(FigS7B$ss_coef,3)
+FigS7B$ws_coef <- round(FigS7B$ws_coef,3)
+FigS7B$bl_fdr <- format(FigS7B$bl_fdr, scientific=TRUE, digit=2)
+FigS7B$mrs_fdr <- format(FigS7B$mrs_fdr, scientific=TRUE, digit=2)
+FigS7B$ss_fdr <- format(FigS7B$ss_fdr, scientific=TRUE, digit=2)
+FigS7B$ws_fdr <- format(FigS7B$ws_fdr, scientific=TRUE, digit=2)
+FigS7B$bl_p.val <- format(FigS7B$bl_p.val, scientific=TRUE, digit=2)
+FigS7B$mrs_p.val <- format(FigS7B$mrs_p.val, scientific=TRUE, digit=2)
+FigS7B$ss_p.val <- format(FigS7B$ss_p.val, scientific=TRUE, digit=2)
+FigS7B$ws_p.val <- format(FigS7B$ws_p.val, scientific=TRUE, digit=2)
 
-# Add two m1ank columns for CI
+# Add two blank columns for CI
 FigS7B$`95% CI` <- paste(rep(" ", 50), collapse = " ")
 # Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS7B$m1_lower <- round(FigS7B$m1_lower,3)
-FigS7B$m2_lower <- round(FigS7B$m2_lower,3)
-FigS7B$m1_upper <- round(FigS7B$m1_upper,3)
-FigS7B$m2_upper <- round(FigS7B$m2_upper,3)
+FigS7B$bl_lower <- round(FigS7B$bl_lower,3)
+FigS7B$mrs_lower <- round(FigS7B$mrs_lower,3)
+FigS7B$ss_lower <- round(FigS7B$ss_lower,3)
+FigS7B$ws_lower <- round(FigS7B$ws_lower,3)
+FigS7B$bl_upper <- round(FigS7B$bl_upper,4)
+FigS7B$mrs_upper <- round(FigS7B$mrs_upper,3)
+FigS7B$ss_upper <- round(FigS7B$ss_upper,3)
+FigS7B$ws_upper <- round(FigS7B$ws_upper,3)
 
-FigS7B$CI <- paste(sprintf("(%.2f, %.2f)", FigS7B$m1_lower, FigS7B$m1_upper),
-                sprintf("(%.2f, %.2f)", FigS7B$m2_lower, FigS7B$m2_upper),
+FigS7B$CI <- paste(sprintf("(%.2f, %.2f)", FigS7B$bl_lower, FigS7B$bl_upper), 
+                sprintf("(%.2f, %.2f)", FigS7B$mrs_lower, FigS7B$mrs_upper),
+                sprintf("(%.2f, %.2f)", FigS7B$ss_lower, FigS7B$ss_upper),
+                sprintf("(%.2f, %.2f)", FigS7B$ws_lower, FigS7B$ws_upper),
                 sep = "\n")
-FigS7B$Beta <- paste(sprintf("%.2f", FigS7B$m1_coef),
-                sprintf("%.2f", FigS7B$m2_coef),
+FigS7B$Beta <- paste(sprintf("%.2f", FigS7B$bl_coef),
+                sprintf("%.2f", FigS7B$mrs_coef),
+                sprintf("%.2f", FigS7B$ss_coef),
+                sprintf("%.2f", FigS7B$ws_coef),
                 sep = "\n")
-FigS7B$p.val <- paste( FigS7B$m1_p.val, FigS7B$m2_p.val,
-                sep = "\n")
-FigS7B$q.val <- paste(FigS7B$m1_fdr, FigS7B$m2_fdr, sep = "\n")
+FigS7B$q.val <- paste(FigS7B$bl_fdr, FigS7B$mrs_fdr, FigS7B$ss_fdr, FigS7B$ws_fdr,sep = "\n")
+FigS7B$p.val <- paste(FigS7B$bl_p.val, FigS7B$mrs_p.val, FigS7B$ss_p.val, FigS7B$ws_p.val, sep = "\n")
 
 FigS7B$CI[grepl("NA", FigS7B$CI)] <- "" # Any NA to blank
 FigS7B$Beta[grepl("NA", FigS7B$Beta)] <- "" # Any NA to blank
-FigS7B$p.val[grepl("NA", FigS7B$p.val)]<- ""
 FigS7B$q.val[grepl("NA", FigS7B$q.val)] <- "" # Any NA to blank
+FigS7B$p.val[grepl("NA", FigS7B$p.val)] <- "" # Any NA to blank
+names(FigS7B)[24] <- 'Odds Ratio'
 
 #################### plot
-names(FigS7B)[13] <- '95%CI'
-plot <- forest(FigS7B[,c(1,14,15,16,13,12)], 
-            est = list(FigS7B$m1_coef,
-                       FigS7B$m2_coef),
-            lower = list(FigS7B$m1_lower,
-                         FigS7B$m2_lower),
-            upper = list(FigS7B$m1_upper,
-                         FigS7B$m2_upper),
-            ci_column = 6,
-            ref_line = 0, 
-            theme = tm)
-plot
-```
-
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
-
-## Fig S7C
-
-``` r
-row.names(FigS7C) <- 1:nrow(FigS7C)
-sub <- split(FigS7C, FigS7C$group) 
-m1 <- sub[[1]] %>% dplyr::select(-c(group))
-names(m1) <- paste0('m1_', names(m1))
-m2 <- sub[[2]]%>% dplyr::select(-c(group))
-names(m2) <- paste0('m2_', names(m2))
-FigS7C <- cbind(m1,m2) %>% dplyr::select(-c(m2_pheno))
-names(FigS7C)[1] <- 'Phenotype'
-
-FigS7C <- rbind(FigS7C, data.frame(Phenotype=c('Other phenotypes'),
-                           m1_coef=rep(NA,1),m1_p.val=rep(NA,1), m1_lower=rep(NA,1),
-                           m1_upper=rep(NA,1),m1_fdr=rep(NA,1), m2_fdr=rep(NA,1),
-                           m2_coef=rep(NA,1), m2_p.val=rep(NA,1),m2_lower=rep(NA,1),m2_upper=rep(NA,1) ))
-FigS7C <- FigS7C[c(5,1:4),]
-row.names(FigS7C) <- 1:nrow(FigS7C)
-FigS7C$Phenotype[c(2:5)] <- c('Diabetes', 'Hypertension', 'Long Sleep', 'Short Sleep')
-FigS7C$Phenotype <- ifelse(is.na(FigS7C$m1_coef), 
-                      FigS7C$Phenotype,
-                      paste0("   ", FigS7C$Phenotype))
-# NA to blank or NA will be transformed to carachter.
-FigS7C$m1_coef<-round(FigS7C$m1_coef,3)
-FigS7C$m2_coef<-round(FigS7C$m2_coef,3)
-FigS7C$m1_p.val<-format(FigS7C$m1_p.val, scientific=TRUE, digits=2)
-FigS7C$m2_p.val<-format(FigS7C$m2_p.val, scientific=TRUE, digits=2)
-FigS7C$m1_fdr <- format(FigS7C$m1_fdr, scientific=TRUE, digit=2)
-FigS7C$m2_fdr <- format(FigS7C$m2_fdr, scientific=TRUE, digit=2)
-
-# Add two m1ank columns for CI
-FigS7C$`95% CI` <- paste(rep(" ", 50), collapse = " ")
-# Generate point estimation and 95% CI. Paste two CIs together and separate by line break.
-FigS7C$m1_lower <- round(FigS7C$m1_lower,3)
-FigS7C$m2_lower <- round(FigS7C$m2_lower,3)
-FigS7C$m1_upper <- round(FigS7C$m1_upper,3)
-FigS7C$m2_upper <- round(FigS7C$m2_upper,3)
-
-FigS7C$CI <- paste(sprintf("(%.2f, %.2f)", FigS7C$m1_lower, FigS7C$m1_upper),
-                sprintf("(%.2f, %.2f)", FigS7C$m2_lower, FigS7C$m2_upper),
-                sep = "\n")
-FigS7C$Beta <- paste(sprintf("%.2f", FigS7C$m1_coef),
-                sprintf("%.2f", FigS7C$m2_coef),
-                sep = "\n")
-FigS7C$p.val <- paste(FigS7C$m1_p.val, FigS7C$m2_p.val,
-                sep = "\n")
-FigS7C$q.val <- paste(FigS7C$m1_fdr, FigS7C$m2_fdr, sep = "\n")
-
-FigS7C$CI[grepl("NA", FigS7C$CI)] <- "" # Any NA to blank
-FigS7C$Beta[grepl("NA", FigS7C$Beta)] <- "" # Any NA to blank
-FigS7C$p.val[grepl("NA", FigS7C$p.val)]<- ""
-FigS7C$q.val[grepl("NA", FigS7C$q.val)]<- ""
-
-#################### plot
-names(FigS7C)[13] <- '95%CI'
-names(FigS7C)[14] <- 'Odds Ratio'
-plot <- forest(FigS7C[,c(1,14,15,16,13,12)], 
-            est = list(FigS7C$m1_coef,
-                       FigS7C$m2_coef),
-            lower = list(FigS7C$m1_lower,
-                         FigS7C$m2_lower),
-            upper = list(FigS7C$m1_upper,
-                         FigS7C$m2_upper),
+# Generate plot
+names(FigS7B)[23]<-'95%CI'
+plot <- forest(FigS7B[,c(1,24,23,26,25,22)], 
+            est = list(FigS7B$bl_coef,
+                       FigS7B$mrs_coef,
+                       FigS7B$ss_coef,
+                       FigS7B$ws_coef),
+            lower = list(FigS7B$bl_lower,
+                       FigS7B$mrs_lower,
+                         FigS7B$ss_lower,
+                        FigS7B$ws_lower), 
+            upper = list(FigS7B$bl_upper,
+                      FigS7B$mrs_upper,
+                         FigS7B$ss_upper,
+                        FigS7B$ws_upper),
             ci_column = 6,
             ref_line = 1, 
             theme = tm)
 plot
 ```
 
-![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](Supplementary_Preparation_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 # Create Supplementary Table S6
 
